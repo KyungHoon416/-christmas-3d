@@ -4,6 +4,11 @@ A 3D Christmas social metaverse set in six districts of Seoul — meet people, c
 
 ![Gwanghwamun](docs/screenshots/region-gwanghwamun.jpg)
 
+## Deploy (free, HTTPS — voice chat works)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/KyungHoon416/-christmas-3d)
+
+Click the button, sign in to Render with GitHub, press **Apply**. After ~3 minutes you get `https://christmas-world-seoul.onrender.com` (or similar). Any Docker host also works (`Dockerfile`).
+
 ## Quick start
 ```bash
 npm install

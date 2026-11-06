@@ -1,0 +1,23 @@
+# One-click deploy on Render (https://render.com):
+#   https://render.com/deploy?repo=https://github.com/KyungHoon416/-christmas-3d
+# Render serves it over HTTPS with WebSockets, so multiplayer and the microphone work.
+services:
+  - type: web
+    name: christmas-world-seoul
+    runtime: node
+    branch: claude/happy-maxwell-h16k3m
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Optional: a TURN server helps voice chat on strict mobile/corporate networks.
+      - key: TURN_URL
+        sync: false
+      - key: TURN_USER
+        sync: false
+      - key: TURN_PASS
+        sync: false

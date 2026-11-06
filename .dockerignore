@@ -1,0 +1,7 @@
+node_modules
+dist
+dist-demo
+server/data
+test-results
+docs/screenshots
+.git
