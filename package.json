@@ -1,0 +1,26 @@
+{
+  "name": "christmas-world-seoul",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CHRISTMAS WORLD SEOUL - 3D social metaverse (Three.js + WebSocket + WebRTC)",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e/run-e2e.mjs",
+    "loadtest": "node scripts/loadtest.js",
+    "thumbs": "node scripts/thumbs.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0",
+    "ws": "8.18.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.11"
+  },
+  "engines": { "node": ">=20" }
+}
