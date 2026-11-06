@@ -33,3 +33,8 @@ Gain and level metering run on a 50 ms timer independent of the render loop; mus
 - **No TURN server configured** → users behind symmetric NAT may fail to connect (set `TURN_URL/USER/PASS`). Only same-machine (host candidates) was tested.
 - Not tested on real phones / Safari; echo cancellation quality with real speakers not measured.
 - Mesh topology: each user uploads one stream per nearby talker; beyond ~8 simultaneous nearby talkers an SFU (e.g. LiveKit/mediasoup) is recommended.
+
+## Local network HTTPS (`npm run start:https`)
+- `server/index.js --https` (or `HTTPS=1`) serves HTTPS + WSS. On first run it creates a self-signed certificate in `server/data/` covering `localhost`, `127.0.0.1` and every LAN IPv4 of the machine (regenerated when the addresses change); `SSL_CERT`/`SSL_KEY` override it.
+- Verified: two browsers (desktop + emulated Pixel 7) on the HTTPS server were secure contexts, connected via WebRTC and each received the other's microphone (peak RMS 0.07–0.11). A second physical device on another IP could not be simulated in the CI sandbox (non-loopback connections are blocked there).
+- The artifact (shared link) build cannot use voice: the artifact sandbox refuses microphone access and WebRTC.

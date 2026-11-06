@@ -1,11 +1,11 @@
 {
-  "date": "2026-11-06T09:21:13.639Z",
+  "date": "2026-11-06T13:27:14.232Z",
   "results": [
     {
       "id": "R-01",
       "name": "같은 링크의 두 사람이 서로를 봄 (presence 동기화)",
       "ok": true,
-      "detail": "p_hvqjgdb1ak / p_ytwx2w0hkf"
+      "detail": "p_6abs51mx3n / p_knqgdi74e3"
     },
     {
       "id": "R-02",
@@ -29,7 +29,7 @@
       "id": "R-05",
       "name": "손잡고 함께 이동",
       "ok": true,
-      "detail": "follower moved 2.92m"
+      "detail": "follower moved 3.25m"
     },
     {
       "id": "R-06",

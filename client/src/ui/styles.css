@@ -333,3 +333,44 @@ body.mobile .duel-hud { top: calc(52px + var(--safe-t)); padding: 6px 10px; }
 body.dueling .worlds { display: none; }
 body.dueling .actions { bottom: calc(14px + var(--safe-b)); }
 body.dueling .carol { bottom: calc(14px + var(--safe-b)); }
+
+/* ---------------------------------------------------------------- mobile controls (labelled) */
+.joystick .dir { color: rgba(255, 255, 255, 0.75); font-size: 11px; position: absolute; }
+.joystick .dir.u { top: 6px; left: 50%; transform: translateX(-50%); }
+.joystick .dir.d { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.joystick .dir.l { left: 8px; top: 50%; transform: translateY(-50%); }
+.joystick .dir.r { right: 8px; top: 50%; transform: translateY(-50%); }
+.joystick .jlbl { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+.joystick.active .jlbl { display: none; }
+.look-hint { display: none; position: fixed; right: calc(110px + var(--safe-r)); top: 46%; font-size: 12px; font-weight: 700; line-height: 1.5; text-align: center; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); padding: 8px 12px; border: 1.5px dashed rgba(255, 255, 255, 0.45); border-radius: 14px; pointer-events: none; z-index: 4; transition: opacity 0.6s; }
+body.mobile .look-hint { display: block; }
+.look-hint.gone { opacity: 0; }
+body.mobile .mctl { grid-template-columns: repeat(3, auto); align-items: end; }
+.mctl .roundbtn { flex-direction: column; }
+.mctl .roundbtn .lbl { position: absolute; bottom: -17px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); white-space: nowrap; }
+.mctl .fire { color: #bfe3ff; }
+.mctl.dueling .fire { width: 82px; height: 82px; background: linear-gradient(135deg, #ff6fae, #e4407f); color: #fff; box-shadow: 0 0 0 4px rgba(255, 140, 192, 0.35), var(--shadow); }
+.mctl.dueling .fire:active { transform: scale(0.94); }
+body.mobile.dueling .actions { display: none; }
+body.mobile .mctl { bottom: calc(30px + var(--safe-b)); }
+body.mobile.portrait .mctl { bottom: calc(30px + var(--safe-b)); }
+
+/* controls guide */
+.ctl-phone { position: relative; height: 170px; border-radius: 22px; border: 2px solid rgba(255, 255, 255, 0.25); background: linear-gradient(160deg, #1b2346, #2a1f43); margin-bottom: 14px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; }
+.ctl-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; font-size: 11.5px; color: var(--muted); padding: 8px; }
+.ctl-zone b { color: #fff; font-size: 13px; }
+.ctl-zone.left { border-right: 1.5px dashed rgba(255, 255, 255, 0.25); }
+.ctl-stick { width: 58px; height: 58px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); display: flex; align-items: center; justify-content: center; }
+.ctl-stick i { width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 255, 255, 0.7); animation: stick 2.4s ease-in-out infinite; }
+@keyframes stick { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(0, -14px); } 50% { transform: translate(14px, 0); } 75% { transform: translate(-14px, 0); } }
+.ctl-swipe { font-size: 22px; color: #fff; animation: swipe 1.6s ease-in-out infinite alternate; }
+@keyframes swipe { from { transform: translateX(-12px); } to { transform: translateX(12px); } }
+.ctl-btns { position: absolute; right: 10px; bottom: 8px; display: flex; gap: 6px; }
+.ctl-btns .b { width: 38px; height: 38px; border-radius: 50%; background: rgba(255, 95, 162, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; }
+.ctl-btns em { font-style: normal; font-size: 9px; }
+.ctl-list { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 8px; font-size: 13.5px; line-height: 1.55; color: #ded9ea; }
+.ctl-list b { color: #fff; margin-right: 4px; }
+@media (prefers-reduced-motion: reduce) { .ctl-stick i, .ctl-swipe { animation: none; } }
+/* portrait: keep the action bar above the joystick */
+body.mobile.portrait .actions { bottom: calc(232px + var(--safe-b)); }
+body.mobile.portrait .joystick:not(.active) { top: calc(100% - 128px - var(--safe-b)); }

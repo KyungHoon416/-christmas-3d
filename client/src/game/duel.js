@@ -272,7 +272,7 @@ export class DuelController {
       if (k > 0) setTimeout(() => step(k - 1), 1000); else setTimeout(() => c.remove(), 700);
     };
     step(n);
-    toast(`❄️ ${esc(this.active.oppNick)}님과 1:1 눈싸움 대결! 화면 중앙 조준점으로 조준하고 클릭(또는 F)으로 발사하세요.`, { ms: 5000 });
+    if (!this.app.mobile) toast(`❄️ ${esc(this.active.oppNick)}님과 1:1 눈싸움 대결! 화면 중앙 조준점으로 조준하고 스페이스바(꾹 누르면 연사)나 클릭으로 발사하세요.`, { ms: 5000 });
   }
 
   flash(kind) {

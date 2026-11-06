@@ -10,17 +10,21 @@
     "dev:client": "vite",
     "build": "vite build",
     "start": "node server/index.js",
+    "start:https": "node server/index.js --https",
     "test": "node --test tests/*.test.js",
     "test:e2e": "node tests/e2e/run-e2e.mjs",
     "loadtest": "node scripts/loadtest.js",
     "thumbs": "node scripts/thumbs.mjs"
   },
   "dependencies": {
+    "selfsigned": "^2.4.1",
     "three": "0.170.0",
     "ws": "8.18.0"
   },
   "devDependencies": {
     "vite": "5.4.11"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

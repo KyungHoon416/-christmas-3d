@@ -375,29 +375,49 @@ export class App {
     const cv = $('[data-cv]', carol); cv.value = this.carol.volume; cv.oninput = () => this.carol.setVolume(+cv.value);
 
     // mobile: joystick + controls + left quick buttons
-    const joy = el('<div class="joystick"><div class="knob"></div></div>');
+    const joy = el('<div class="joystick"><span class="dir u">▲</span><span class="dir d">▼</span><span class="dir l">◀</span><span class="dir r">▶</span><div class="knob"></div><span class="jlbl">이동 · 끝까지 밀면 달리기</span></div>');
+    const lookHint = el('<div class="look-hint">👆 이 쪽을 드래그해서<br/>둘러보기 · 조준</div>');
+    R.appendChild(lookHint);
+    this.lookHint = lookHint;
     R.appendChild(joy);
     this.input.joystickEl = joy; this.input.knob = $('.knob', joy);
     const mctl = el(`<div class="mctl">
-      <button class="roundbtn big" data-m="fire" title="발사">${icon('snowball', 28)}</button>
-      <button class="roundbtn big" data-m="jump">${icon('jump', 26)}</button></div>`);
+      <button class="roundbtn small-reload hidden" data-m="reload" title="재장전">${icon('skip', 18)}<span class="lbl">장전</span></button>
+      <button class="roundbtn big fire" data-m="fire" title="발사">${icon('snowball', 28)}<span class="lbl" data-firelbl>눈싸움</span></button>
+      <button class="roundbtn big" data-m="jump">${icon('jump', 26)}<span class="lbl">점프</span></button></div>`);
     R.appendChild(mctl);
     $('[data-m="jump"]', mctl).addEventListener('touchstart', (e) => { this.input.jumpQueued = true; e.preventDefault(); }, { passive: false });
     $('[data-m="jump"]', mctl).onclick = () => { this.input.jumpQueued = true; };
     const fireBtn = $('[data-m="fire"]', mctl);
-    fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if (!this.duel.fire()) this.requestDuel(); }, { passive: false });
+    // hold the fire button for continuous fire (rate-limited by the gun)
+    fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.fireHeld = true; if (!this.duel.fire()) { this.fireHeld = false; this.requestDuel(); } }, { passive: false });
+    const release = () => { this.fireHeld = false; };
+    fireBtn.addEventListener('touchend', release);
+    fireBtn.addEventListener('touchcancel', release);
     fireBtn.onclick = () => { if (!this.duel.fire()) this.requestDuel(); };
+    $('[data-m="reload"]', mctl).addEventListener('touchstart', (e) => { e.preventDefault(); this.duel.reload(); }, { passive: false });
+    $('[data-m="reload"]', mctl).onclick = () => this.duel.reload();
+    this.mctl = mctl;
     const mtop = el(`<div class="mtopbtns">
       <button class="roundbtn" data-o="chat">${icon('chat', 20)}<span class="badge" data-chatbadge></span></button>
       <button class="roundbtn" data-o="friends">${icon('users', 20)}</button>
-      <button class="roundbtn" data-o="worlds">${icon('map', 20)}</button></div>`);
+      <button class="roundbtn" data-o="worlds">${icon('map', 20)}</button>
+      <button class="roundbtn" data-o="help" title="조작법"><b style="font-size:18px">?</b></button></div>`);
     R.appendChild(mtop);
     $('[data-o="chat"]', mtop).onclick = () => this.openSheet(this.chat.root);
     $('[data-o="friends"]', mtop).onclick = () => this.openSheet(this.friendsEl);
     $('[data-o="worlds"]', mtop).onclick = () => this.openSheet(this.worldsEl);
+    $('[data-o="help"]', mtop).onclick = () => this.openControls();
+    if (this.mobile) {
+      let seen = null;
+      try { seen = localStorage.getItem('cw.mhelp'); } catch {}
+      if (!seen) setTimeout(() => this.openControls(), 3600);
+    }
 
     // keyboard shortcuts
     this.input.onKey = (e) => {
+      // during a duel Space fires instead of jumping (hold for continuous fire)
+      if (e.code === 'Space' && this.duel.inDuel) { this.input.jumpQueued = false; this.duel.fire(); return; }
       if (e.code === 'KeyF') { if (!this.duel.fire()) this.requestDuel(); }
       else if (e.code === 'KeyR') this.duel.reload();
       else if (e.code === 'KeyM') this.openMenu('map');
@@ -445,7 +465,19 @@ export class App {
   frame(dt) {
     this.world.update(dt);
     this.minimap?.update(dt);
+    if (this.duel.inDuel && (this.fireHeld || this.input.keys.has('Space'))) { this.input.jumpQueued = false; this.duel.fire(); }
     this.duel.update(dt);
+    if (this.mctl) {
+      const d = this.duel.inDuel;
+      if (d !== this._mDuel) {
+        this._mDuel = d;
+        $('[data-firelbl]', this.mctl).textContent = d ? '발사' : '눈싸움';
+        $('[data-m="reload"]', this.mctl).classList.toggle('hidden', !d);
+        this.mctl.classList.toggle('dueling', d);
+        if (d && this.mobile) toast(`❄️ ${this.duel.active?.oppNick || ''}님과 대결! 오른쪽 화면 드래그로 조준 → 발사 버튼 (꾹 = 연사)`, { ms: 4000 });
+      }
+    }
+    if (this.lookHint && !this.lookHintGone && (this.input.lookTouch?.id ?? null) !== null) { this.lookHintGone = true; this.lookHint.classList.add('gone'); }
     this.updateLabels();
     if (this.statsEl) {
       this.statsAcc = (this.statsAcc || 0) + dt;
@@ -818,7 +850,7 @@ export class App {
 
   // ================================================================= voice
   async toggleVoice() {
-    if (this.demo) return toast('데모 모드에서는 음성 대화를 쓸 수 없어요. 로컬 서버(npm start)에서 실행하면 근거리 음성이 동작합니다.', { ms: 5000 });
+    if (this.demo) return toast('공유 링크(아티팩트)에서는 브라우저 보안 정책상 마이크를 쓸 수 없어요. 내 컴퓨터에서 서버를 실행하면 음성 대화가 돼요: npm start (같은 PC) / npm run start:https (같은 와이파이의 폰·다른 PC)', { ms: 8000 });
     try {
       if (this.voice.inVoice) { this.voice.leave(); toast('음성 대화에서 나왔어요'); }
       else { await this.voice.join(); toast('🎧 근거리 음성 대화에 참여했어요. 가까운(10m 이내) 사람의 목소리가 들립니다. 마이크는 꺼져 있어요.'); }
@@ -917,11 +949,11 @@ export class App {
   }
 
   openMobileMenu(menu) {
-    const m = modal('메뉴', `<div class="region-list">${menu.map(([k, ic, l]) => `<button class="btn" data-k="${k}">${icon(ic, 18)} ${l}</button>`).join('')}<button class="btn" data-k="settings">${icon('gear', 18)} 설정</button><button class="btn" data-k="notifications">${icon('bell', 18)} 알림</button></div>`);
+    const m = modal('메뉴', `<div class="region-list">${menu.map(([k, ic, l]) => `<button class="btn" data-k="${k}">${icon(ic, 18)} ${l}</button>`).join('')}<button class="btn" data-k="settings">${icon('gear', 18)} 설정</button><button class="btn" data-k="notifications">${icon('bell', 18)} 알림</button><button class="btn" data-k="controls">🕹 조작법</button></div>`);
     m.querySelector('.modal-body').onclick = (e) => {
       const b = e.target.closest('[data-k]'); if (!b) return;
       m.close();
-      if (b.dataset.k === 'settings') this.openSettings(); else if (b.dataset.k === 'notifications') this.openNotifications(); else this.openMenu(b.dataset.k);
+      if (b.dataset.k === 'settings') this.openSettings(); else if (b.dataset.k === 'notifications') this.openNotifications(); else if (b.dataset.k === 'controls') this.openControls(); else this.openMenu(b.dataset.k);
     };
   }
 
@@ -954,7 +986,8 @@ export class App {
       <div class="section-title">❄️ 1:1 눈덩이 총 대결</div>
       <p class="note">하단 <b>눈싸움</b> 버튼이나 캐릭터 메뉴에서 ${DUEL.range}m 안의 상대에게 대결을 신청하세요. 수락하면 둘 다 눈덩이 총을 들고 3초 뒤 시작해요.<br/>
       • 체력 ${DUEL.hp} · 한 발 맞으면 -${DUEL.damage} (${DUEL.hp / DUEL.damage}발이면 승리) · 제한 시간 ${DUEL.seconds / 60}분<br/>
-      • 화면 중앙 조준점으로 조준 → <b>클릭</b> 또는 <b>F</b>로 발사, 탄창 ${DUEL.mag}발 · <b>R</b> 재장전 · 모바일은 오른쪽 아래 눈덩이 버튼<br/>
+      • 화면 중앙 조준점으로 조준 → <b>스페이스바</b>(꾹 누르면 연사) · 클릭 · F로 발사, 탄창 ${DUEL.mag}발 · <b>R</b> 재장전<br/>
+      • 모바일: 오른쪽 화면 드래그로 조준, 오른쪽 아래 <b>발사</b> 버튼(꾹 누르면 연사), <b>장전</b> 버튼<br/>
       • 마우스 드래그로 조준 방향을 돌리고, WASD로 옆걸음하며 피하세요. 건물과 트리는 엄폐물이 됩니다.</p>
       <p><b>내 전적:</b> ${st.w}승 ${st.l}패 ${st.d}무</p>
       <button class="btn primary" data-duelnow>가장 가까운 상대에게 대결 신청</button>
@@ -1014,6 +1047,33 @@ export class App {
     $('[data-save]', m).onclick = () => { saved = true; this.net.send({ t: 'appearance', appearance: look }); m.close(); toast('옷차림을 저장했어요 ✨'); };
   }
 
+  openControls() {
+    try { localStorage.setItem('cw.mhelp', '1'); } catch {}
+    const mobile = this.mobile;
+    const body = mobile ? `
+      <div class="ctl-phone" aria-hidden="true">
+        <div class="ctl-zone left"><div class="ctl-stick"><i></i></div><b>이동 조이스틱</b><span>왼쪽 아무 곳이나 대고 밀기<br/>끝까지 밀면 달리기</span></div>
+        <div class="ctl-zone right"><div class="ctl-swipe">⟵ ⟶</div><b>시점 · 조준</b><span>오른쪽을 드래그<br/>탭하면 캐릭터 선택</span></div>
+        <div class="ctl-btns"><span class="b">❄️<em>발사</em></span><span class="b">⬆<em>점프</em></span></div>
+      </div>
+      <ul class="ctl-list">
+        <li><b>🕹 조이스틱 (왼쪽)</b> 화면 왼쪽에 손가락을 대면 그 자리에 조이스틱이 생겨요. 밀어서 이동하고, 끝까지 밀면 달려요.</li>
+        <li><b>👆 시점 (오른쪽)</b> 오른쪽 화면을 드래그하면 카메라가 돌아가요. 이동과 동시에 할 수 있어요.</li>
+        <li><b>👤 캐릭터 탭</b> 다른 사람을 탭하면 메뉴가 열려요 (귓속말, 친구, 손잡기, 대결 등).</li>
+        <li><b>⬆ 점프</b> 오른쪽 아래 버튼</li>
+        <li><b>❄️ 눈싸움</b> 평소에는 가까운 사람에게 대결 신청, 대결 중에는 <b>발사</b> 버튼이 돼요. 꾹 누르면 연사, <b>장전</b> 버튼으로 재장전해요.</li>
+        <li><b>💬 👥 🗺</b> 왼쪽 버튼으로 채팅, 친구 목록, 서울 월드맵을 열어요. 아래에서 올라오는 창은 ✕로 닫아요.</li>
+        <li><b>📱 가로 모드</b> 휴대폰을 가로로 돌리면 화면이 더 넓어요. 돌려도 위치와 연결은 그대로예요.</li>
+      </ul>` : `
+      <ul class="ctl-list">
+        <li><b>WASD / 방향키</b> 이동 · <b>Shift</b> 달리기 · <b>Space</b> 점프</li>
+        <li><b>마우스 드래그</b> 시점 회전 · <b>휠</b> 줌 · <b>클릭</b> 캐릭터 메뉴</li>
+        <li><b>Enter</b> 채팅 · <b>1/2/3</b> 인사·하트·춤 · <b>P</b> 사진 · <b>M</b> 지도 · <b>X</b> 손 놓기</li>
+        <li><b>❄️ 눈싸움 대결</b> <b>F</b>로 가까운 사람에게 신청 → 대결 중 <b>스페이스바</b>(꾹 누르면 연사)·클릭·F로 발사, <b>R</b> 재장전, 마우스 드래그로 조준</li>
+      </ul>`;
+    modal(mobile ? '📱 모바일 조작법' : '⌨️ 조작법', body, { foot: '<button class="btn primary" data-ok>알겠어요!</button>' }).querySelector('[data-ok]').onclick = (e) => e.target.closest('.modal-bg').close();
+  }
+
   openNotifications() {
     const b = $('[data-bellbadge]', this.root); if (b) { b.dataset.n = 0; b.textContent = ''; }
     modal('알림', this.notifications.length ? this.notifications.map((n) => `<div class="msg">${esc(n.text)}<span class="time">${new Date(n.ts).toLocaleTimeString('ko-KR')}</span></div>`).join('') : '<div class="empty">새 알림이 없습니다</div>');
@@ -1038,7 +1098,7 @@ export class App {
       <div class="section-title">개인정보</div>
       <label class="check"><input type="checkbox" data-share ${this.self.shareLocation ? 'checked' : ''}/> 친구에게 현재 지역 공개 (미니맵/친구목록)</label>
       <div class="section-title">조작법</div>
-      <p class="note">PC: WASD/방향키 이동 · Shift 달리기 · Space 점프 · 마우스 드래그 시점 · 휠 줌 · Enter 채팅 · F 눈덩이 · V 마이크 · 1/2/3 인사/하트/춤 · P 사진 · X 손 놓기 · M 지도<br/>모바일: 왼쪽 화면 드래그 = 조이스틱 · 오른쪽 화면 드래그 = 시점 (동시 조작 가능)</p>`,
+      <p class="note">PC: WASD/방향키 이동 · Shift 달리기 · Space 점프(대결 중에는 발사) · 마우스 드래그 시점 · 휠 줌 · Enter 채팅 · F 눈싸움 신청/발사 · R 재장전 · V 마이크 · 1/2/3 인사/하트/춤 · P 사진 · X 손 놓기 · M 지도<br/>모바일: 왼쪽 화면 드래그 = 조이스틱 · 오른쪽 화면 드래그 = 시점 (동시 조작 가능)</p>`,
     { foot: '<button class="btn danger" data-logout>로그아웃</button>' });
     $('[data-q]', m).onchange = (e) => {
       const v = e.target.value;

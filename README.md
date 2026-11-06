@@ -12,7 +12,14 @@ npm start          # → http://localhost:3000
 ```
 Development (hot reload): `npm run dev` → http://localhost:5173
 
-Microphones require HTTPS outside `localhost`. For voice across networks set `TURN_URL`, `TURN_USER`, `TURN_PASS`.
+### Voice chat on phones / other PCs (same Wi-Fi)
+Browsers only allow the microphone on `https://` (or `localhost`). Run:
+```bash
+npm run start:https
+```
+The server prints `https://<your-LAN-IP>:3000`. Open it on each phone/PC, accept the self-signed certificate warning once (Advanced → Proceed), then press 🎧 and 🎙. To use your own certificate set `SSL_CERT` and `SSL_KEY` (file paths). For voice across different networks also set `TURN_URL`, `TURN_USER`, `TURN_PASS`.
+
+The shared Claude artifact version cannot use the microphone (the artifact sandbox blocks microphone access and WebRTC).
 
 ## Tests
 ```bash

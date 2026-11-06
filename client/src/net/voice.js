@@ -52,7 +52,7 @@ export class Voice {
 
   // Join = start listening to nearby voices. Mic stays OFF until toggled.
   async join() {
-    if (!this.supported) throw new Error(window.isSecureContext ? '이 브라우저는 음성 대화를 지원하지 않습니다' : '음성 대화는 HTTPS(또는 localhost)에서만 사용할 수 있습니다');
+    if (!this.supported) throw new Error(window.isSecureContext ? '이 브라우저는 음성 대화를 지원하지 않습니다' : '마이크는 HTTPS 주소에서만 쓸 수 있어요. 서버를 npm run start:https 로 실행하고 https:// 주소로 접속하세요');
     this.ensureContext();
     this.inVoice = true;
     this.sendState();
