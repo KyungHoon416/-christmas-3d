@@ -33,7 +33,7 @@ node scripts/loadtest.js 50 20             # 50-bot room load test
 | QA-17 | 보안 | ✅ PASS (scope below) | Speed/teleport & wall-clip rejection, whisper privacy, block filter, adult+consent checks, RTC relay restrictions, rate limits |
 | QA-18 | 회귀 / 오류 | ✅ PASS | No page errors or console errors during the whole E2E run |
 
-Latest automated run: `docs/qa-e2e-results.json`.
+Latest automated run: **21/21 passed** — `docs/qa-e2e-results.json`.
 
 ## Performance (QA-16)
 

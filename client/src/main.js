@@ -12,7 +12,7 @@ const VIEWS = {
   cheonggyecheon: { pos: [-67, -2.2, 3], look: [-30, -1.5, -1] },
   myeongdong: { pos: [-64, 3.2, 2], look: [30, 6, -2] },
   ddp: { pos: [34, 5, 58], look: [-6, 7, -18] },
-  namsan: { pos: [-20, 3, 37], look: [2, 24, -6] },
+  namsan: { pos: [13, 2.4, 29], look: [-2, 26, -6] },
 };
 
 if (thumb && getRegion(thumb)) {

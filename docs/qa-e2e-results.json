@@ -1,0 +1,132 @@
+{
+  "date": "2026-11-06T08:29:45.216Z",
+  "base": "http://localhost:3100",
+  "results": [
+    {
+      "id": "QA-01",
+      "name": "PC 접속: 3D 월드 표시",
+      "ok": true,
+      "detail": "{\"fps\":3,\"frameMs\":6.33,\"updateMs\":0.65,\"renderMs\":5.67,\"calls\":221,\"tris\":131874,\"geometries\":175,\"textures\":26,\"quality\":\"low\"}"
+    },
+    {
+      "id": "QA-02a",
+      "name": "모바일(세로) 접속: 모바일 UI/조이스틱",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "QA-07",
+      "name": "멀티플레이: 서로 다른 클라이언트에서 상호 확인 + 위치 동기화",
+      "ok": true,
+      "detail": "A sees B,C=true,true; B pos on A vs B self Δ=0.00m"
+    },
+    {
+      "id": "QA-08",
+      "name": "전체 채팅 실시간 송수신 (UI 입력 → 다른 클라이언트 DOM)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "QA-09",
+      "name": "귓속말: 당사자만 수신 (제3자 미수신)",
+      "ok": true,
+      "detail": "B received=true, C received=false"
+    },
+    {
+      "id": "QA-11",
+      "name": "친구 신청 → 수락(모바일 UI 버튼) → 양쪽 목록 반영",
+      "ok": true,
+      "detail": "A list has B=true, B list has A=true"
+    },
+    {
+      "id": "QA-12",
+      "name": "손잡기: 수락 후 함께 이동",
+      "ok": true,
+      "detail": "leader moved 1.90m, follower moved 2.33m, gap 0.97m"
+    },
+    {
+      "id": "QA-12b",
+      "name": "손잡기: 한쪽이 취소하면 즉시 해제",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "QA-13",
+      "name": "커플: 신청·수락·해제",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "QA-10",
+      "name": "음성: 3명이 동시에 말할 때 각자 나머지 2명의 독립 오디오 스트림 수신",
+      "ok": true,
+      "detail": "levels A={\"u_1f3f92c1fa70\":0.4446,\"u_4b0f6c0e2136\":0.0921} B={\"u_4b0f6c0e2136\":0.453,\"u_03540d8b3f1b\":0.4643} C={\"u_03540d8b3f1b\":0.4007,\"u_1f3f92c1fa70\":0.0673}"
+    },
+    {
+      "id": "QA-10b",
+      "name": "음성: 근거리(≤3m) 게인 ≈1",
+      "ok": true,
+      "detail": "gains=1,1"
+    },
+    {
+      "id": "QA-10c",
+      "name": "음성: 10m 초과 시 음소거 (거리 감쇠)",
+      "ok": true,
+      "detail": "gain at ~13m = 0"
+    },
+    {
+      "id": "QA-10d",
+      "name": "음성: 새 사용자 합류 시 기존 연결 유지 + 신규 스트림 수신",
+      "ok": true,
+      "detail": "during: {\"u_1f3f92c1fa70\":0.4204} after: A={\"u_1f3f92c1fa70\":0.4231,\"u_4b0f6c0e2136\":0.1962} B={\"u_03540d8b3f1b\":0.4418,\"u_4b0f6c0e2136\":0.41}"
+    },
+    {
+      "id": "QA-15a",
+      "name": "캐럴 덕킹: 음성 대화 중 배경음 감소",
+      "ok": true,
+      "detail": "min duck gain over 4s=0.25"
+    },
+    {
+      "id": "QA-02b",
+      "name": "모바일 회전: 위치/연결/마이크 상태 유지",
+      "ok": true,
+      "detail": "{\"before\":{\"x\":-5.322579186237342,\"z\":31.215873296047096,\"net\":\"open\",\"mic\":true},\"after\":{\"x\":-5.322579186237342,\"z\":31.215873296047096,\"net\":\"open\",\"mic\":true,\"land\":true}}"
+    },
+    {
+      "id": "QA-06",
+      "name": "서울 월드맵: 지역 이동 (이전 지역에서 퇴장 처리)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "QA-09b",
+      "name": "귓속말: 서로 다른 지역에서도 유지",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "QA-16a",
+      "name": "지역 이동 후 이전 씬 리소스 해제 (geometry 수 누적 없음)",
+      "ok": true,
+      "detail": "namsan geometries before=87 after round-trip=92"
+    },
+    {
+      "id": "QA-07b",
+      "name": "네트워크 재접속: 동일 계정으로 복귀 + 다른 플레이어 재표시",
+      "ok": true,
+      "detail": "reconnected=true seesB=true sameId=true"
+    },
+    {
+      "id": "QA-16",
+      "name": "성능 측정값 수집 (headless SwiftShader — 실제 GPU 아님)",
+      "ok": true,
+      "detail": "{\"fps\":2,\"frameMs\":1911.15,\"updateMs\":0.47,\"renderMs\":1910.68,\"calls\":191,\"tris\":125336,\"geometries\":167,\"textures\":26,\"quality\":\"low\"}"
+    },
+    {
+      "id": "QA-18",
+      "name": "콘솔/페이지 오류 없음",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

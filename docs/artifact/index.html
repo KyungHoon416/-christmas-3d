@@ -53,6 +53,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--lamp); outline-
 
 /* play shots */
 .duo { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: start; }
+.duo .phone img { aspect-ratio: 390 / 520; object-fit: cover; object-position: top; }
 
 /* ledger */
 .ledger { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
@@ -120,7 +121,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     <h2 id="play-h">다른 브라우저의 플레이어가 같은 광장에 서 있는 모습</h2>
     <div class="duo">
       <figure class="shot" style="margin:0"><img src="shots/e2e-hand-holding.jpg" alt="데스크톱 클라이언트에서 본 손잡기 상태의 두 캐릭터와 HUD" loading="lazy"><figcaption>데스크톱 · 손잡기 후 함께 이동</figcaption></figure>
-      <figure class="shot" style="margin:0"><img src="shots/e2e-mobile-portrait-friends.jpg" alt="모바일 세로 화면의 친구 목록 바텀시트" loading="lazy"><figcaption>iPhone 에뮬레이션 · 세로</figcaption></figure>
+      <figure class="shot phone" style="margin:0"><img src="shots/e2e-mobile-portrait-friends.jpg" alt="모바일 세로 화면의 친구 목록 바텀시트" loading="lazy"><figcaption>iPhone 에뮬레이션 · 세로</figcaption></figure>
     </div>
     <p class="muted">자동화 테스트가 데스크톱 2개와 아이폰 에뮬레이션 1개를 같은 서버에 접속시켜 채팅, 귓속말, 친구 신청, 손잡기, 커플, 3인 동시 음성, 지역 이동, 화면 회전, 재접속을 차례로 검증했습니다.</p>
   </section>
@@ -130,7 +131,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     <h2 id="qa-h">검증 결과</h2>
     <div class="summary">
       <div class="stat"><b>18 / 18</b><span>단위·서버 통합 테스트</span></div>
-      <div class="stat"><b data-e2e>20 / 21</b><span>실제 브라우저 E2E 검사</span></div>
+      <div class="stat"><b>21 / 21</b><span>실제 브라우저 E2E 검사</span></div>
       <div class="stat"><b>2.7 ms</b><span>서버 틱 (한 방에 봇 50명)</span></div>
       <div class="stat"><b>24 KB/s</b><span>플레이어 1명당 수신량</span></div>
     </div>

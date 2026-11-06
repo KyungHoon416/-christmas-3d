@@ -14,7 +14,8 @@ const full = process.argv.includes('--full'); // also save large screenshots to 
 
 fs.mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-for (const r of REGIONS) {
+const only = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
+for (const r of REGIONS.filter((x) => !only || x.id === only)) {
   const page = await browser.newPage({ viewport: full ? { width: 1280, height: 720 } : { width: 480, height: 300 }, deviceScaleFactor: 1 });
   await page.goto(`${BASE}/?thumb=${r.id}`);
   await page.waitForFunction(() => window.__thumbReady === true, null, { timeout: 120000 });
