@@ -93,7 +93,7 @@ function gwanghwamun() {
     desc: '광화문과 세종대왕상, 메인 크리스마스 트리와 겨울 마켓',
     highlights: ['메인 트리', '겨울 마켓', '세종대왕상'],
     bounds: { minX: -70, maxX: 72, minZ: -78, maxZ: 92 },
-    spawn: { x: -8, z: 34, rot: 0 },
+    spawn: { x: -8, z: 34, rot: Math.PI },
     ground: { plaza: { x: -8.5, z: 6, hw: 12.5, hd: 86 }, road: { x: 13, z: 6, hw: 9, hd: 86 }, sidewalkE: { x: 25.5, z: 6, hw: 3.5, hd: 86 } },
     buildings, lamps, stalls, decoTrees, landmarks, colliders, surfaces: [],
     map: [
@@ -148,7 +148,7 @@ function seoulPlaza() {
     desc: '서울시청 앞 겨울 스케이트장과 포토존',
     highlights: ['스케이트장', '서울시청', '포토존'],
     bounds: { minX: -72, maxX: 72, minZ: -48, maxZ: 70 },
-    spawn: { x: 0, z: 30, rot: 0 },
+    spawn: { x: 0, z: 30, rot: Math.PI },
     buildings, lamps, stalls: [], decoTrees, landmarks, colliders, surfaces: [],
     ice: [{ x: 0, z: 4, hw: 22, hd: 15 }],
     map: [
@@ -274,7 +274,7 @@ function myeongdong() {
     desc: '반짝이는 간판과 노점, 명동성당까지 이어지는 쇼핑 거리',
     highlights: ['쇼핑 거리', '길거리 음식', '명동성당'],
     bounds: { minX: -80, maxX: 80, minZ: -75, maxZ: 48 },
-    spawn: { x: -70, z: 0, rot: -Math.PI / 2 },
+    spawn: { x: -70, z: 0, rot: Math.PI / 2 },
     crossX, cath,
     buildings: filtered, lamps, stalls, decoTrees: [], landmarks: { tree: { x: 12.5, z: 0, r: 2.4, h: 10 }, subway: [{ x: -77.5, z: -2, rot: 0 }] },
     colliders, surfaces: [],
@@ -318,7 +318,7 @@ function ddp() {
     desc: '곡면 건축물과 LED 장미정원, 미디어아트 포토존',
     highlights: ['미디어아트', 'LED 장미정원', '대형 포토존'],
     bounds: { minX: -70, maxX: 74, minZ: -66, maxZ: 62 },
-    spawn: { x: 0, z: 54, rot: 0 },
+    spawn: { x: 0, z: 54, rot: Math.PI },
     buildings, lamps, stalls: [], decoTrees: [], landmarks, colliders, surfaces: [],
     map: [
       { x: -4, z: -26, label: 'DDP', icon: 'building' },
@@ -355,7 +355,7 @@ function namsan() {
     desc: '서울 야경이 내려다보이는 전망대와 사랑의 자물쇠',
     highlights: ['서울 야경', '사랑의 자물쇠', '커플 포토존'],
     bounds: { circle: true, x: 0, z: 0, r: 43 },
-    spawn: { x: 0, z: 34, rot: 0 },
+    spawn: { x: 0, z: 34, rot: Math.PI },
     buildings: [], lamps, stalls: [], decoTrees: [], landmarks, colliders, surfaces: [],
     map: [
       { x: 0, z: -6, label: 'N서울타워', icon: 'tower' },

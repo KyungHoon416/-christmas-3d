@@ -315,7 +315,7 @@ export class Game {
     const kind = m.kind;
     const target = this.sessions.get(m.to);
     const fail = (err) => this.send(s, { t: 'reqResult', kind, to: m.to, ok: false, err });
-    if (!['friend', 'couple', 'holdHand', 'walk', 'hug', 'party', 'invite'].includes(kind)) return fail('kind');
+    if (!['friend', 'couple', 'holdHand', 'walk', 'hug', 'party', 'invite', 'voice'].includes(kind)) return fail('kind');
     if (!s.reqBucket.take()) return fail('rate');
     let targetUser = target?.user || null;
     if (kind === 'friend' && !targetUser) {
@@ -406,6 +406,8 @@ export class Game {
         result(true);
         return this.sendParty(p);
       }
+      case 'voice':
+        return result(true);
       case 'invite': {
         result(true);
         if (req.region) this.join(s, req.region);

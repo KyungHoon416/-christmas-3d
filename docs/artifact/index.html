@@ -1,0 +1,182 @@
+<title>Christmas World Seoul</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single night-time "street" column — hero shot, region strip, then status ledger.
+   Deliberately single-theme: the subject is Seoul after dark in heavy snow. */
+:root {
+  --ink: #0b0f23;
+  --panel: #141a35;
+  --line: #262d52;
+  --snow: #eef1fa;
+  --muted: #9da1bf;
+  --rose: #ff74b1;
+  --lamp: #f4cd8e;
+  --ok: #6fe0a6;
+  --warn: #ffc56b;
+  --display: "Gowun Batang", "Nanum Myeongjo", Georgia, serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--snow); font-family: var(--body); font-size: 15px; line-height: 1.65; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(22px, 3vw, 28px); }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--rose); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lamp); }
+.muted { color: var(--muted); }
+
+/* hero */
+.hero { display: grid; gap: 18px; }
+.hero h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.1; }
+.hero h1 span { color: var(--rose); }
+.lede { font-size: 17px; color: #d6d8ea; }
+.shot { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { position: absolute; left: 12px; bottom: 10px; font-family: var(--mono); font-size: 12px; color: var(--snow); background: rgba(11, 15, 35, 0.72); padding: 3px 9px; border-radius: 6px; }
+.facts { display: flex; flex-wrap: wrap; gap: 10px 26px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.facts b { color: var(--snow); font-weight: 500; }
+
+/* regions */
+.section { display: grid; gap: 18px; }
+.regions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.region { display: grid; gap: 8px; min-width: 0; }
+.region .shot img { aspect-ratio: 16 / 9; object-fit: cover; }
+.region h3 { font-size: 18px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.region h3 small { font-family: var(--mono); font-size: 11.5px; color: var(--lamp); font-weight: 400; white-space: nowrap; }
+.region p { font-size: 13.5px; color: var(--muted); }
+
+/* play shots */
+.duo { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: start; }
+
+/* ledger */
+.ledger { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.id { font-family: var(--mono); color: var(--muted); white-space: nowrap; }
+.pill { display: inline-block; font-family: var(--mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: rgba(111, 224, 166, 0.14); color: var(--ok); }
+.pill.warn { background: rgba(255, 197, 107, 0.15); color: var(--warn); }
+.summary { display: flex; flex-wrap: wrap; gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; display: grid; gap: 2px; min-width: 150px; flex: 1; }
+.stat b { font-family: var(--display); font-size: 28px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+/* gaps + run */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: #d6d8ea; }
+ul.plain li::marker { color: var(--rose); }
+pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.6; color: var(--snow); }
+.note { border-left: 3px solid var(--lamp); padding: 4px 0 4px 14px; color: #d6d8ea; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+
+@media (max-width: 760px) {
+  .regions { grid-template-columns: 1fr 1fr; }
+  .duo, .cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 460px) { .regions { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">v4.0 · 개발 결과 보고 · 2026-11-06</div>
+    <h1>눈 내리는 서울에서 <span>만나고, 이야기하고, 함께 걷는</span> 3D 소셜 월드</h1>
+    <p class="lede">Three.js 실시간 3D 월드, 권위 서버 기반 멀티플레이, WebRTC 근거리 음성, 친구·커플·손잡기까지 실제로 동작하는 크리스마스 메타버스입니다. 아래 화면은 모두 게임 엔진이 실제로 렌더링한 장면입니다.</p>
+    <figure class="shot" style="margin:0">
+      <img src="shots/region-gwanghwamun.jpg" alt="광화문광장: 메인 크리스마스 트리, 겨울 마켓, 세종대로와 멀리 보이는 광화문" width="1280" height="720">
+      <figcaption>광화문광장 · 1 게임m = 실제 2.4m</figcaption>
+    </figure>
+    <div class="facts">
+      <span>저장소 <b>KyungHoon416/-christmas-3d</b></span>
+      <span>브랜치 <b>claude/happy-maxwell-h16k3m</b></span>
+      <span>스택 <b>Three.js r170 · Node 22 · ws · WebRTC</b></span>
+      <span>번들 <b>205 KB gzip</b></span>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="regions-h">
+    <div class="eyebrow">Phase 2 · 서울 6개 지역</div>
+    <h2 id="regions-h">각각 걸어 다닐 수 있는 독립 월드</h2>
+    <p class="muted">건물 외곽선 데이터 하나를 클라이언트는 3D 형상으로, 서버는 충돌체로 함께 사용합니다. 그래서 보이는 벽은 항상 막혀 있고, 건물 사이 골목은 실제로 지나갈 수 있습니다. 배치는 실제 지리 관계를 따른 근사 모델이며 측량 정확도는 아닙니다.</p>
+    <div class="regions">
+      <article class="region"><figure class="shot" style="margin:0"><img src="shots/region-seoulplaza.jpg" alt="서울광장 스케이트장과 서울시청" loading="lazy"></figure><h3>서울광장·시청 <small>×2.0</small></h3><p>미끄러운 빙판 물리의 스케이트장, 곡면 유리 신청사, 서울도서관, 대한문</p></article>
+      <article class="region"><figure class="shot" style="margin:0"><img src="shots/region-cheonggyecheon.jpg" alt="청계천 빛 터널과 물길" loading="lazy"></figure><h3>청계천 <small>×3.0</small></h3><p>지하 4m 산책로, 다리 위와 아래를 모두 걷는 2.5D 충돌, 징검다리, 색이 바뀌는 빛 터널</p></article>
+      <article class="region"><figure class="shot" style="margin:0"><img src="shots/region-myeongdong.jpg" alt="명동 쇼핑 거리의 네온 간판과 노점" loading="lazy"></figure><h3>명동 <small>×2.0</small></h3><p>40여 개 상점의 네온·세로 간판, 노점, 교차 조명, 명동성당 첨탑</p></article>
+      <article class="region"><figure class="shot" style="margin:0"><img src="shots/region-ddp.jpg" alt="DDP 곡면 건물과 LED 장미정원" loading="lazy"></figure><h3>DDP <small>×2.2</small></h3><p>알루미늄 패널 곡면 외피, 미디어아트 파사드, 물결치듯 빛나는 LED 장미 2,200송이</p></article>
+      <article class="region"><figure class="shot" style="margin:0"><img src="shots/region-namsan.jpg" alt="남산서울타워와 사랑의 자물쇠" loading="lazy"></figure><h3>남산서울타워 <small>×1.5</small></h3><p>조명이 바뀌는 타워, 자물쇠 약 3,600개, 팔각정, 4만여 개 불빛의 서울 야경</p></article>
+      <article class="region"><figure class="shot" style="margin:0"><img src="shots/region-gwanghwamun.jpg" alt="광화문광장 전경" loading="lazy"></figure><h3>광화문광장 <small>×2.4</small></h3><p>단청과 처마를 올린 광화문, 세종대왕상, 이순신장군상, 세종문화회관, 22m 메인 트리</p></article>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="play-h">
+    <div class="eyebrow">Phase 1 · 4 · 7 · 9 — 실제 접속 화면</div>
+    <h2 id="play-h">다른 브라우저의 플레이어가 같은 광장에 서 있는 모습</h2>
+    <div class="duo">
+      <figure class="shot" style="margin:0"><img src="shots/e2e-hand-holding.jpg" alt="데스크톱 클라이언트에서 본 손잡기 상태의 두 캐릭터와 HUD" loading="lazy"><figcaption>데스크톱 · 손잡기 후 함께 이동</figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="shots/e2e-mobile-portrait-friends.jpg" alt="모바일 세로 화면의 친구 목록 바텀시트" loading="lazy"><figcaption>iPhone 에뮬레이션 · 세로</figcaption></figure>
+    </div>
+    <p class="muted">자동화 테스트가 데스크톱 2개와 아이폰 에뮬레이션 1개를 같은 서버에 접속시켜 채팅, 귓속말, 친구 신청, 손잡기, 커플, 3인 동시 음성, 지역 이동, 화면 회전, 재접속을 차례로 검증했습니다.</p>
+  </section>
+
+  <section class="section" aria-labelledby="qa-h">
+    <div class="eyebrow">Phase 11 · QA</div>
+    <h2 id="qa-h">검증 결과</h2>
+    <div class="summary">
+      <div class="stat"><b>18 / 18</b><span>단위·서버 통합 테스트</span></div>
+      <div class="stat"><b data-e2e>20 / 21</b><span>실제 브라우저 E2E 검사</span></div>
+      <div class="stat"><b>2.7 ms</b><span>서버 틱 (한 방에 봇 50명)</span></div>
+      <div class="stat"><b>24 KB/s</b><span>플레이어 1명당 수신량</span></div>
+    </div>
+    <div class="ledger">
+      <table>
+        <thead><tr><th>ID</th><th>항목</th><th>결과</th><th>근거</th></tr></thead>
+        <tbody>
+          <tr><td class="id">QA-01</td><td>PC 접속</td><td><span class="pill ok">통과</span></td><td>3D 월드 + HUD 렌더링, 콘솔 오류 없음</td></tr>
+          <tr><td class="id">QA-02</td><td>모바일 세로·가로</td><td><span class="pill ok">통과 (에뮬레이션)</span></td><td>회전 후 위치·연결·마이크 상태 유지. 실기기는 미검증</td></tr>
+          <tr><td class="id">QA-04</td><td>건물 충돌</td><td><span class="pill ok">통과</span></td><td>벽 통과·순간이동은 서버가 거부, 골목은 통과 가능</td></tr>
+          <tr><td class="id">QA-06</td><td>6개 지역 이동</td><td><span class="pill ok">통과</span></td><td>이동 후 이전 씬 리소스 해제 확인</td></tr>
+          <tr><td class="id">QA-07</td><td>멀티플레이·재접속</td><td><span class="pill ok">통과</span></td><td>위치 오차 0.01m, 같은 계정으로 복귀</td></tr>
+          <tr><td class="id">QA-08 · 09</td><td>전체 채팅 · 귓속말</td><td><span class="pill ok">통과</span></td><td>귓속말은 당사자만 수신, 다른 지역에서도 유지</td></tr>
+          <tr><td class="id">QA-10</td><td>음성 동시 대화</td><td><span class="pill ok">통과</span></td><td>3명 동시 발화 시 각자 2개 스트림 수신 · ≤3m 게인 1.0 · 13m에서 0 · 재합류 후 유지</td></tr>
+          <tr><td class="id">QA-11 · 12 · 13</td><td>친구 · 손잡기 · 커플</td><td><span class="pill ok">통과</span></td><td>모두 상대의 수락이 있어야 실행, 거절·취소 시 즉시 해제</td></tr>
+          <tr><td class="id">QA-15</td><td>캐럴</td><td><span class="pill ok">통과</span></td><td>음성 대화 중 배경음 25%로 자동 감소</td></tr>
+          <tr><td class="id">QA-16</td><td>성능 목표 (60 / 30 FPS)</td><td><span class="pill warn">측정 불가</span></td><td>GPU 없는 환경(CPU 렌더링). 단일 클라이언트 33–44 FPS. 실기기 측정 필요</td></tr>
+          <tr><td class="id">QA-18</td><td>회귀 · 오류</td><td><span class="pill ok">통과</span></td><td>전체 E2E 동안 페이지·콘솔 오류 0건</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="cols">
+    <div class="section">
+      <div class="eyebrow">남은 과제</div>
+      <h2>아직 완료되지 않은 것</h2>
+      <ul class="plain">
+        <li><b>TURN 서버</b>가 없어 엄격한 NAT 환경에서는 음성이 연결되지 않을 수 있습니다.</li>
+        <li><b>실제 휴대폰</b>(iOS Safari, Android Chrome)과 GPU 기기에서의 FPS 측정이 필요합니다.</li>
+        <li>로그인은 닉네임 기반 게스트 계정이며, 성인 여부는 <b>자기 신고</b>입니다.</li>
+        <li><b>상점·재화·레벨</b> 시스템은 없어서 화면에 "준비 중"으로 표시합니다.</li>
+        <li>서울 지형은 <b>근사 모델</b>입니다. 정확도를 높이려면 라이선스가 확인된 공간 데이터가 필요합니다.</li>
+        <li><code>k-carol.mp3</code>는 제공되지 않아, 퍼블릭 도메인 캐럴을 브라우저에서 실시간 합성합니다.</li>
+      </ul>
+    </div>
+    <div class="section">
+      <div class="eyebrow">직접 실행</div>
+      <h2>로컬에서 플레이하기</h2>
+      <pre>npm install
+npm run build
+npm start
+# → http://localhost:3000</pre>
+      <p class="note">이 페이지 안에서는 게임을 실행할 수 없습니다. 아티팩트는 WebSocket과 WebRTC를 차단하기 때문에, 멀티플레이와 음성이 필요한 게임은 Node 서버에서 실행해야 합니다. 다른 기기에서 마이크를 쓰려면 HTTPS 주소로 배포하세요.</p>
+    </div>
+  </section>
+
+  <footer>문서: CURRENT_PROJECT_AUDIT · ARCHITECTURE · UI_UX_SPEC · WORLD_MAP_SPEC · MULTIPLAYER_SPEC · VOICE_CHAT_SPEC · QA_REPORT · DEVELOPMENT_REPORT (저장소 <code>docs/</code>)</footer>
+</div>
