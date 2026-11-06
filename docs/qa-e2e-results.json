@@ -1,12 +1,12 @@
 {
-  "date": "2026-11-06T08:29:45.216Z",
+  "date": "2026-11-06T09:38:46.510Z",
   "base": "http://localhost:3100",
   "results": [
     {
       "id": "QA-01",
       "name": "PC 접속: 3D 월드 표시",
       "ok": true,
-      "detail": "{\"fps\":3,\"frameMs\":6.33,\"updateMs\":0.65,\"renderMs\":5.67,\"calls\":221,\"tris\":131874,\"geometries\":175,\"textures\":26,\"quality\":\"low\"}"
+      "detail": "{\"fps\":1,\"frameMs\":3.82,\"updateMs\":0.59,\"renderMs\":3.23,\"calls\":192,\"tris\":125216,\"geometries\":169,\"textures\":26,\"quality\":\"low\"}"
     },
     {
       "id": "QA-02a",
@@ -18,7 +18,7 @@
       "id": "QA-07",
       "name": "멀티플레이: 서로 다른 클라이언트에서 상호 확인 + 위치 동기화",
       "ok": true,
-      "detail": "A sees B,C=true,true; B pos on A vs B self Δ=0.00m"
+      "detail": "A sees B,C=true,true; B pos on A vs B self Δ=0.01m"
     },
     {
       "id": "QA-08",
@@ -42,7 +42,7 @@
       "id": "QA-12",
       "name": "손잡기: 수락 후 함께 이동",
       "ok": true,
-      "detail": "leader moved 1.90m, follower moved 2.33m, gap 0.97m"
+      "detail": "leader moved 2.30m, follower moved 2.32m, gap 1.27m"
     },
     {
       "id": "QA-12b",
@@ -60,7 +60,7 @@
       "id": "QA-10",
       "name": "음성: 3명이 동시에 말할 때 각자 나머지 2명의 독립 오디오 스트림 수신",
       "ok": true,
-      "detail": "levels A={\"u_1f3f92c1fa70\":0.4446,\"u_4b0f6c0e2136\":0.0921} B={\"u_4b0f6c0e2136\":0.453,\"u_03540d8b3f1b\":0.4643} C={\"u_03540d8b3f1b\":0.4007,\"u_1f3f92c1fa70\":0.0673}"
+      "detail": "levels A={\"u_187743ab6f68\":0.4066,\"u_e3aa16933cd0\":0.3846} B={\"u_187743ab6f68\":0.3903,\"u_4569682d2730\":0.0972} C={\"u_4569682d2730\":0.2108,\"u_e3aa16933cd0\":0.4595}"
     },
     {
       "id": "QA-10b",
@@ -78,7 +78,7 @@
       "id": "QA-10d",
       "name": "음성: 새 사용자 합류 시 기존 연결 유지 + 신규 스트림 수신",
       "ok": true,
-      "detail": "during: {\"u_1f3f92c1fa70\":0.4204} after: A={\"u_1f3f92c1fa70\":0.4231,\"u_4b0f6c0e2136\":0.1962} B={\"u_03540d8b3f1b\":0.4418,\"u_4b0f6c0e2136\":0.41}"
+      "detail": "during: {\"u_e3aa16933cd0\":0.054} after: A={\"u_e3aa16933cd0\":0.0657,\"u_187743ab6f68\":0.3443} B={\"u_4569682d2730\":0.0959,\"u_187743ab6f68\":0.4467}"
     },
     {
       "id": "QA-15a",
@@ -90,7 +90,7 @@
       "id": "QA-02b",
       "name": "모바일 회전: 위치/연결/마이크 상태 유지",
       "ok": true,
-      "detail": "{\"before\":{\"x\":-5.322579186237342,\"z\":31.215873296047096,\"net\":\"open\",\"mic\":true},\"after\":{\"x\":-5.322579186237342,\"z\":31.215873296047096,\"net\":\"open\",\"mic\":true,\"land\":true}}"
+      "detail": "{\"before\":{\"x\":-7.7036244017753255,\"z\":32.46599348762988,\"net\":\"open\",\"mic\":true},\"after\":{\"x\":-7.7036244017753255,\"z\":32.46599348762988,\"net\":\"open\",\"mic\":true,\"land\":true}}"
     },
     {
       "id": "QA-06",
@@ -108,7 +108,7 @@
       "id": "QA-16a",
       "name": "지역 이동 후 이전 씬 리소스 해제 (geometry 수 누적 없음)",
       "ok": true,
-      "detail": "namsan geometries before=87 after round-trip=92"
+      "detail": "namsan geometries before=94 after round-trip=86"
     },
     {
       "id": "QA-07b",
@@ -120,7 +120,7 @@
       "id": "QA-16",
       "name": "성능 측정값 수집 (headless SwiftShader — 실제 GPU 아님)",
       "ok": true,
-      "detail": "{\"fps\":2,\"frameMs\":1911.15,\"updateMs\":0.47,\"renderMs\":1910.68,\"calls\":191,\"tris\":125336,\"geometries\":167,\"textures\":26,\"quality\":\"low\"}"
+      "detail": "{\"fps\":6,\"frameMs\":1722.62,\"updateMs\":0.47,\"renderMs\":1722.16,\"calls\":189,\"tris\":125168,\"geometries\":165,\"textures\":26,\"quality\":\"low\"}"
     },
     {
       "id": "QA-18",
