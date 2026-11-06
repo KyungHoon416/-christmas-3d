@@ -24,7 +24,8 @@ export class Voice {
     this.outputDeviceId = localStorage.getItem('cw.outDevice') || '';
     this.iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
     this.speakingLocal = false;
-    fetch('/api/config').then((r) => r.json()).then((c) => { if (c.iceServers) this.iceServers = c.iceServers; }).catch(() => {});
+    // eslint-disable-next-line no-undef
+    if (!(typeof __DEMO__ !== 'undefined' && __DEMO__)) fetch('/api/config').then((r) => r.json()).then((c) => { if (c.iceServers) this.iceServers = c.iceServers; }).catch(() => {});
     net.on('rtc', (m) => this.onSignal(m.from, m.data));
     net.on('pleave', (m) => this.closePeer(m.id));
     net.on('joined', () => { for (const id of [...this.peers.keys()]) this.closePeer(id); this.sendState(); });

@@ -1,3 +1,9 @@
+// Storage can be unavailable (private mode, sandboxed frames): fall back to memory.
+try { localStorage.setItem('__cw', '1'); localStorage.removeItem('__cw'); } catch {
+  const mem = new Map();
+  const shim = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k), clear: () => mem.clear() };
+  try { Object.defineProperty(window, 'localStorage', { value: shim, configurable: true }); } catch {}
+}
 import { App } from './ui/app.js';
 import { Engine } from './engine/engine.js';
 import { getRegion } from '../../shared/regions.js';

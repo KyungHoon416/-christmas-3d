@@ -61,7 +61,8 @@ export class CarolPlayer {
     this.ambient.connect(this.ctx.destination);
     this.startWind();
     // optional licensed recording
-    fetch('/audio/k-carol.mp3', { method: 'HEAD' }).then((r) => {
+    // eslint-disable-next-line no-undef
+    if (!(typeof __DEMO__ !== 'undefined' && __DEMO__)) fetch('/audio/k-carol.mp3', { method: 'HEAD' }).then((r) => {
       if (r.ok && (r.headers.get('content-type') || '').includes('audio')) {
         this.mp3 = new Audio('/audio/k-carol.mp3');
         this.mp3.loop = true;

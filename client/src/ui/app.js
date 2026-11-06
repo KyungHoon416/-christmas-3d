@@ -6,6 +6,10 @@ import { Engine } from '../engine/engine.js';
 import { Input } from '../engine/input.js';
 import { World } from '../game/world.js';
 import { Net } from '../net/net.js';
+import { LocalNet } from '../net/localServer.js';
+
+// eslint-disable-next-line no-undef
+const DEMO = typeof __DEMO__ !== 'undefined' && __DEMO__;
 import { Voice } from '../net/voice.js';
 import { CarolPlayer } from '../audio/carol.js';
 import { Chat } from './chat.js';
@@ -33,7 +37,9 @@ export class App {
     this.engine.onQualityChange = (q) => toast(`성능을 위해 그래픽 품질을 '${q}'로 낮췄습니다`);
     this.input = new Input(this.engine.canvas, null);
     const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
-    this.net = new Net(wsUrl);
+    this.demo = DEMO;
+    if (DEMO) localStorage.removeItem('cw.token'); // in-page server starts fresh each load
+    this.net = DEMO ? new LocalNet() : new Net(wsUrl);
     this.self = null;
     this.social = { friends: [], incoming: [], blocked: [], couple: null, party: null };
     this.notifications = [];
@@ -98,6 +104,7 @@ export class App {
     const card = el(`<div class="login"><div class="login-card glass">
       <div class="logo">Christmas World<small>✦ SEOUL ✦</small></div>
       <p>눈 내리는 서울의 크리스마스 거리에서<br/>사람들을 만나고, 이야기하고, 함께 걸어요.</p>
+      ${DEMO ? '<p class="note" style="margin-top:-8px">🎮 오프라인 데모: 게임 서버가 이 페이지 안에서 실행되고, NPC 친구들이 함께 놀아요. (음성 대화는 로컬 서버 실행 시 사용 가능)</p>' : ''}
       <div class="field"><label>닉네임 (2~12자)</label><input class="input" data-nick maxlength="12" placeholder="예) WinterRin♡" autocomplete="nickname"/></div>
       <div class="field"><label>코트 색</label><div class="swatches" data-coat>${APPEARANCE_OPTIONS.coat.map((c) => `<button class="swatch ${c === look.coat ? 'on' : ''}" data-v="${c}" style="background:${c}"></button>`).join('')}</div></div>
       <div class="field"><label>모자</label><div class="swatches" data-hat>${[['earmuff', '귀마개'], ['beanie', '비니'], ['santa', '산타'], ['none', '없음']].map(([v, l]) => `<button class="chip ${v === look.hat ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div></div>
@@ -340,7 +347,7 @@ export class App {
         <button class="btn small" data-fullmap>${icon('map', 16)} 전체 지도</button>
         <button class="iconbtn" data-collapse style="width:30px;height:30px" title="접기/펼치기">${icon('chevDown', 18)}</button>
         <button class="iconbtn sheet-close" data-sheetclose style="width:30px;height:30px">${icon('close', 18)}</button></div>
-      <div class="cards">${REGIONS.map((r) => `<button class="card" data-region="${r.id}" style="background-image:url(/thumbs/${r.id}.jpg), linear-gradient(135deg,#2a2f5c,#5a2f5a)"><div class="shade"></div><span class="cnt" data-cnt></span><div class="t">${icon('pin', 14)} ${r.name}</div><div class="d">${r.highlights.join(' · ')}</div></button>`).join('')}</div></div>`);
+      <div class="cards">${REGIONS.map((r) => `<button class="card" data-region="${r.id}" style="background-image:url(thumbs/${r.id}.jpg), linear-gradient(135deg,#2a2f5c,#5a2f5a)"><div class="shade"></div><span class="cnt" data-cnt></span><div class="t">${icon('pin', 14)} ${r.name}</div><div class="d">${r.highlights.join(' · ')}</div></button>`).join('')}</div></div>`);
     R.appendChild(this.worldsEl);
     $$('[data-region]', this.worldsEl).forEach((b) => (b.onclick = () => this.travel(b.dataset.region)));
     $('[data-collapse]', this.worldsEl).onclick = () => { document.body.classList.toggle('worlds-collapsed'); localStorage.setItem('cw.worldsCollapsed', document.body.classList.contains('worlds-collapsed') ? '1' : '0'); };
@@ -396,7 +403,8 @@ export class App {
 
     this.engine.onFrame = (dt) => this.frame(dt);
     // keep region player counts fresh
-    this.countTimer = setInterval(() => fetch('/api/metrics').then((r) => r.json()).then((j) => { this.regionCounts = Object.fromEntries(j.rooms.map((r) => [r.id, r.players])); this.updateCards(); }).catch(() => {}), 20000);
+    if (this.net.counts) this.countTimer = setInterval(() => { this.regionCounts = this.net.counts(); this.updateCards(); }, 3000);
+    else this.countTimer = setInterval(() => fetch('/api/metrics').then((r) => r.json()).then((j) => { this.regionCounts = Object.fromEntries(j.rooms.map((r) => [r.id, r.players])); this.updateCards(); }).catch(() => {}), 20000);
     this.renderFriends();
     this.updateCarolUI();
   }
@@ -787,6 +795,7 @@ export class App {
 
   // ================================================================= voice
   async toggleVoice() {
+    if (this.demo) return toast('데모 모드에서는 음성 대화를 쓸 수 없어요. 로컬 서버(npm start)에서 실행하면 근거리 음성이 동작합니다.', { ms: 5000 });
     try {
       if (this.voice.inVoice) { this.voice.leave(); toast('음성 대화에서 나왔어요'); }
       else { await this.voice.join(); toast('🎧 근거리 음성 대화에 참여했어요. 가까운(10m 이내) 사람의 목소리가 들립니다. 마이크는 꺼져 있어요.'); }
@@ -795,6 +804,7 @@ export class App {
   }
 
   async toggleMic() {
+    if (this.demo) return this.toggleVoice();
     try {
       await this.voice.setMic(!this.voice.mic);
       toast(this.voice.mic ? '🎙 마이크 ON — 주변 사람들이 내 목소리를 들을 수 있어요' : '마이크 OFF');
@@ -851,6 +861,11 @@ export class App {
       g.shadowBlur = 0;
       g.font = `${18 * s}px "Noto Sans KR", sans-serif`; g.fillStyle = 'rgba(255,255,255,0.85)'; g.textAlign = 'right';
       g.fillText(`Christmas World Seoul · ${this.world.region.name} · ${new Date().toLocaleDateString('ko-KR')}`, c.width - 40 * s, c.height - 40 * s);
+      if (this.demo) {
+        // downloads are blocked inside an artifact: show the photo to long-press / right-click save
+        modal('📸 사진', `<img src="${c.toDataURL('image/jpeg', 0.9)}" style="width:100%;border-radius:12px" alt="촬영한 사진"/><p class="note">이미지를 길게 누르거나 우클릭해서 저장하세요.</p>`, { wide: true });
+        return;
+      }
       const a = document.createElement('a');
       a.href = c.toDataURL('image/jpeg', 0.92);
       a.download = `christmas-world-${this.world.region.id}-${Date.now()}.jpg`;
