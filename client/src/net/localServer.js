@@ -238,10 +238,10 @@ export class LocalNet {
     this.conn = {
       send: (m) => {
         const copy = structuredClone(m);
-        setTimeout(() => {
+        queueMicrotask(() => {
           if (copy.t === 'pong') { this.rtt = Math.round(performance.now() - copy.c); this.emit('rtt', { rtt: this.rtt }); return; }
           this.emit(copy.t, copy);
-        }, 0);
+        });
         return 0;
       },
       close() {},
@@ -259,7 +259,7 @@ export class LocalNet {
   send(m) {
     if (!this.conn) return false;
     const copy = structuredClone(m);
-    setTimeout(() => this.game.onMessage(this.conn, copy), 0);
+    queueMicrotask(() => this.game.onMessage(this.conn, copy)); // not throttled in background tabs
     return true;
   }
 

@@ -1,17 +1,17 @@
 {
-  "date": "2026-11-06T13:27:14.232Z",
+  "date": "2026-11-06T14:13:51.146Z",
   "results": [
     {
       "id": "R-01",
       "name": "같은 링크의 두 사람이 서로를 봄 (presence 동기화)",
       "ok": true,
-      "detail": "p_6abs51mx3n / p_knqgdi74e3"
+      "detail": "p_er2bv4gi0t / p_90i4q0ectv"
     },
     {
       "id": "R-02",
       "name": "이동 동기화",
       "ok": true,
-      "detail": "Δ=0.00m"
+      "detail": "Δ=0.01m"
     },
     {
       "id": "R-03",
@@ -29,7 +29,7 @@
       "id": "R-05",
       "name": "손잡고 함께 이동",
       "ok": true,
-      "detail": "follower moved 3.25m"
+      "detail": "follower moved 3.24m"
     },
     {
       "id": "R-06",
@@ -41,7 +41,7 @@
       "id": "R-07",
       "name": "명중 판정과 체력이 양쪽에서 일치",
       "ok": true,
-      "detail": "B hp on A=80, on B=80"
+      "detail": "B hp on A=20, on B=20"
     },
     {
       "id": "R-08",

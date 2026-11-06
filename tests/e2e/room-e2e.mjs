@@ -71,6 +71,7 @@ try {
   await B.waitForFunction(() => !window.__cw.world.hold, null, { timeout: 10000 }).catch(() => {});
 
   // duel: A challenges, B accepts; A fires at B; B forfeits
+  for (const p of [A, B]) await ev(p, () => { window.__dlog = []; for (const t of ['duel', 'duelEnd', 'dscore']) window.__cw.net.on(t, (m) => window.__dlog.push(t + ':' + (m.reason || '') + ':' + JSON.stringify(m.hp || {}))); });
   await ev(A, (id) => window.__cw.requestDuel(id), bOnA);
   await B.locator('.toast.req', { hasText: '눈송이' }).locator('.btn.primary').first().click({ timeout: 15000 });
   const dA = await A.waitForFunction(() => window.__cw.duel.inDuel, null, { timeout: 15000 }).then(() => true).catch(() => false);
@@ -96,8 +97,12 @@ try {
   await sleep(1500);
   console.log('B received shots:', JSON.stringify((await ev(B, () => window.__shots)).slice(0, 3)));
   console.log('A view of B:', JSON.stringify(await ev(A, (id) => { const r = window.__cw.world.remotes.get(id); return [r.pos.x, r.pos.y, r.pos.z, window.__cw.world.me.pos.x, window.__cw.world.me.pos.z]; }, bOnA)));
-  const hpA = await ev(A, (id) => window.__cw.duel.active?.hp[id], bOnA);
-  const hpB = await ev(B, () => window.__cw.duel.active?.hp[window.__cw.self.id]);
+  console.log('A', JSON.stringify(await ev(A, () => window.__dlog)), 'B', JSON.stringify(await ev(B, () => window.__dlog)));
+  // read the last score each side saw (works whether the duel is still running or ended by KO)
+  const lastHp = (log, key) => { for (let i = log.length - 1; i >= 0; i--) { const hp = JSON.parse(log[i].split(':').slice(2).join(':') || '{}'); if (hp[key] !== undefined) return hp[key]; } return undefined; };
+  const logA = await ev(A, () => window.__dlog), logB = await ev(B, () => window.__dlog);
+  const hpA = lastHp(logA, bOnA);
+  const hpB = lastHp(logB, await ev(B, () => window.__cw.self.id));
   check('R-07', '명중 판정과 체력이 양쪽에서 일치', hpA !== undefined && hpA < 100 && hpA === hpB, `B hp on A=${hpA}, on B=${hpB}`);
   await ev(B, () => window.__cw.duel.forfeit());
   const endA = await A.waitForFunction(() => !window.__cw.duel.inDuel, null, { timeout: 15000 }).then(() => true).catch(() => false);

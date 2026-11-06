@@ -9,18 +9,21 @@ import fs from 'node:fs';
 const require = createRequire(import.meta.url);
 const { chromium, devices } = require('playwright');
 const BASE = process.env.BASE || 'http://localhost:8766';
+const LIVE = !!process.env.LIVE; // LIVE=1 BASE=https://christmas-3d.web.app -> test the deployed site
 const EMU = process.env.EMU || '127.0.0.1:9000,127.0.0.1:9099';
+const DB_REST = LIVE ? 'https://christmas-3d-default-rtdb.asia-southeast1.firebasedatabase.app' : `http://${EMU.split(',')[0]}`;
+const NS = LIVE ? '' : '?ns=demo-christmas-default-rtdb';
 const results = [];
 const check = (id, name, ok, detail = '') => { results.push({ id, name, ok: !!ok, detail }); console.log(`${ok ? 'PASS' : 'FAIL'} ${id} ${name}${detail ? ' — ' + detail : ''}`); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ ...(LIVE && process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY } } : {}), args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
 const errors = [];
 async function player(nick, opts) {
-  const ctx = await browser.newContext({ ...opts, permissions: ['microphone'] });
+  const ctx = await browser.newContext({ ...opts, permissions: ['microphone'], ignoreHTTPSErrors: LIVE });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`[${nick}] ${e.message}`));
-  await page.goto(`${BASE}/?quality=low&maxfps=10&emu=${EMU}`, { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await page.goto(`${BASE}/?quality=low&maxfps=10${LIVE ? '' : '&emu=' + EMU}`, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await page.fill('[data-nick]', nick);
   await page.check('[data-adult]');
   await page.click('[data-go]');
@@ -88,9 +91,12 @@ try {
   await ev(B, () => window.__cw.duel.forfeit());
 
   // security rules: player B cannot overwrite player A's presence
-  const url = (uid) => `http://${EMU.split(',')[0]}/rooms/main/peers/${uid}.json?ns=demo-christmas-default-rtdb`;
-  const anonWrite = await fetch(url(bOnA.slice(2)), { method: 'PUT', body: JSON.stringify({ n: 'hacked' }) }).then((r) => r.status);
-  const anonRead = await fetch(`http://${EMU.split(',')[0]}/rooms/main/peers.json?ns=demo-christmas-default-rtdb`).then((r) => r.status);
+  const url = (uid) => `${DB_REST}/rooms/main/peers/${uid}.json${NS}`;
+  // curl (honours the HTTPS proxy in CI sandboxes) for the unauthenticated REST checks
+  const { execSync } = await import('node:child_process');
+  const status = (args) => +execSync(`curl -s -o /dev/null -m 15 -w "%{http_code}" ${args}`).toString();
+  const anonWrite = status(`-X PUT -d '{"n":"hacked"}' "${url(bOnA.slice(2))}"`);
+  const anonRead = status(`"${DB_REST}/rooms/main/peers.json${NS}"`);
   // B (signed in) tries to overwrite A's presence through the SDK
   const crossWrite = await ev(B, (uidA) => window.__cw.net.debugWriteOther?.(uidA), aOnB.slice(2));
   check('F-07', '보안 규칙: 비로그인 읽기/쓰기 거부, 남의 데이터 쓰기 거부', [401, 403].includes(anonWrite) && [401, 403].includes(anonRead) && crossWrite === 'denied', `anon PUT ${anonWrite}, anon GET ${anonRead}, B->A write ${crossWrite}`);
@@ -100,6 +106,6 @@ try {
 } finally {
   await browser.close();
 }
-fs.writeFileSync('docs/qa-firebase-results.json', JSON.stringify({ date: new Date().toISOString(), results }, null, 2));
+fs.writeFileSync(LIVE ? 'docs/qa-firebase-live-results.json' : 'docs/qa-firebase-results.json', JSON.stringify({ date: new Date().toISOString(), results }, null, 2));
 console.log(`${results.filter((r) => r.ok).length}/${results.length} passed`);
 process.exit(results.every((r) => r.ok) ? 0 : 1);

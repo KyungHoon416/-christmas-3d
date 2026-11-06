@@ -46,7 +46,9 @@ export class RoomNet extends LocalNet {
   pid(label) { return 'p_' + label; }
   isPeer(id) { return typeof id === 'string' && id.startsWith('p_'); }
   peerOf(id) { return this.peers.get(String(id).slice(2)); }
-  later(type, m) { setTimeout(() => this.emit(type, m), 0); }
+  // microtask, not setTimeout: background tabs throttle timers heavily, which delayed
+  // events (e.g. duel hits) for seconds and let the two players' views drift apart
+  later(type, m) { queueMicrotask(() => this.emit(type, m)); }
   dist(st) { const s = this.me; return s && st ? Math.hypot(st.x - s.pos.x, st.z - s.pos.z) : Infinity; }
   busy() { const s = this.me; return !!(this.phold || this.pduel || s?.hold || s?.duel); }
   get connectedPeers() { return [...this.peers.values()].filter((p) => p.present).length; }

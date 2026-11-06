@@ -855,7 +855,7 @@ export class App {
 
   // ================================================================= voice
   async toggleVoice() {
-    if (this.demo) return toast('이 공유 링크에서는 Claude 보안 정책 때문에 마이크를 쓸 수 없어요. 음성 대화는 정식 서버 버전에서 사용할 수 있어요.', { ms: 6000 });
+    if (this.demo) return toast('이 공유 링크에서는 Claude 보안 정책 때문에 마이크를 쓸 수 없어요. 🎙 음성 대화는 정식 사이트 <b>christmas-3d.web.app</b> 에서 할 수 있어요!', { ms: 7000, html: true });
     try {
       if (this.voice.inVoice) { this.voice.leave(); toast('음성 대화에서 나왔어요'); }
       else { await this.voice.join(); toast('🎧 근거리 음성 대화에 참여했어요. 가까운(10m 이내) 사람의 목소리가 들립니다. 마이크는 꺼져 있어요.'); }

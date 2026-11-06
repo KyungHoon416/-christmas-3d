@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-06T14:09:57.840Z",
+  "results": [
+    {
+      "id": "F-01",
+      "name": "Firebase 익명 로그인 + 실시간 DB 연결",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "F-02",
+      "name": "서로 보임 (presence)",
+      "ok": true,
+      "detail": "p_bTAaXs3UZ4fTCINLsPq8ZvqNDbi2 / p_xQcEzF1yZQVbWZhDNDK21Ap38xC2"
+    },
+    {
+      "id": "F-03",
+      "name": "이동 동기화 (pose 노드)",
+      "ok": true,
+      "detail": "Δ=0.00m"
+    },
+    {
+      "id": "F-04",
+      "name": "채팅",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "F-05",
+      "name": "음성 대화: WebRTC 연결 + 양방향 수신 (DB 시그널링)",
+      "ok": true,
+      "detail": "A=[[\"connected\",0.3138]] B=[[\"connected\",0.4576]]"
+    },
+    {
+      "id": "F-06",
+      "name": "눈싸움 대결: 명중/체력 양쪽 일치",
+      "ok": true,
+      "detail": "B hp on A=20, on B=20"
+    },
+    {
+      "id": "F-07",
+      "name": "보안 규칙: 비로그인 읽기/쓰기 거부, 남의 데이터 쓰기 거부",
+      "ok": true,
+      "detail": "anon PUT 401, anon GET 401, B->A write denied"
+    },
+    {
+      "id": "F-08",
+      "name": "페이지 오류 없음",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}
