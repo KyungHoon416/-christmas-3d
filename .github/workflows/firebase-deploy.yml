@@ -1,0 +1,40 @@
+name: Deploy to Firebase
+
+# Builds the game and deploys Hosting + Realtime Database rules to the `christmas-3d`
+# Firebase project on every push. Needs one repository secret:
+#   FIREBASE_SERVICE_ACCOUNT = the JSON key from Firebase console
+#   (Project settings -> Service accounts -> Generate new private key)
+on:
+  push:
+    branches: [main, claude/happy-maxwell-h16k3m]
+  workflow_dispatch:
+
+concurrency: firebase-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npx vite build --mode firebase
+      - name: Write service account key
+        if: env.HAS_KEY == 'true'
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$KEY" > "$RUNNER_TEMP/sa.json"
+      - name: Deploy (hosting + database rules)
+        if: env.HAS_KEY == 'true'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: npx firebase deploy --only hosting,database --project christmas-3d --non-interactive
+      - name: Missing secret
+        if: env.HAS_KEY != 'true'
+        run: echo "::warning::FIREBASE_SERVICE_ACCOUNT secret is not set - build passed but nothing was deployed."

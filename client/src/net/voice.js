@@ -139,7 +139,7 @@ export class Voice {
       const d = r.pos.distanceTo(this.world.me.pos);
       const p = this.peers.get(r.id);
       const blocked = this.hooks.isBlocked?.(r.id);
-      if (!p && r.voice?.inVoice && d < VOICE_CONNECT && !blocked && myId < r.id) this.createPeer(r.id, true);
+      if (!p && r.voice?.inVoice && d < VOICE_CONNECT && !blocked && (this.net.voiceInitiator?.(r.id) ?? myId < r.id)) this.createPeer(r.id, true);
       else if (p && (d > VOICE_DISCONNECT || !r.voice?.inVoice || blocked)) this.closePeer(r.id);
       else if (p && p.initiator && p.pc.connectionState !== 'connected' && performance.now() - p.created > 12000) {
         // stalled negotiation (e.g. ICE failed) -> retry

@@ -5,3 +5,7 @@ test-results/
 *.log
 .DS_Store
 dist-demo/
+dist-firebase/
+.firebase/
+firebase-debug.log
+database-debug.log

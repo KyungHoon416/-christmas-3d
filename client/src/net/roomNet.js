@@ -121,7 +121,7 @@ export class RoomNet extends LocalNet {
   emitSelf() { if (this.lastSelf) super.emit('self', { t: 'self', you: this.mergeSelf(this.lastSelf) }); }
 
   view(st) {
-    return { id: this.pid(st.label), nick: st.nick, appearance: st.app, x: st.x, y: st.y, z: st.z, ry: st.ry, anim: st.anim, couple: st.cp ? { with: st.cp === this.myPeer ? this.selfId : this.pid(st.cp) } : null, voice: {} };
+    return { id: this.pid(st.label), nick: st.nick, appearance: st.app, x: st.x, y: st.y, z: st.z, ry: st.ry, anim: st.anim, couple: st.cp ? { with: st.cp === this.myPeer ? this.selfId : this.pid(st.cp) } : null, voice: st.vc || {} };
   }
 
   // ------------------------------------------------------------ messages from the app
@@ -286,6 +286,9 @@ export class RoomNet extends LocalNet {
     this.later('unhold', { t: 'unhold', a: h.a, b: h.b, reason });
   }
 
+  // deterministic WebRTC roles between two real players (both sides agree)
+  voiceInitiator(id) { return this.isPeer(id) && this.myPeer ? this.myPeer < id.slice(2) : undefined; }
+
   opp() { const d = this.pduel; return d ? (d.a === this.selfId ? d.b : d.a) : null; }
 
   damage(victim) {
@@ -366,6 +369,9 @@ export class RoomNet extends LocalNet {
     st.anim = typeof pr.a === 'string' ? pr.a.slice(0, 12) : 'idle';
     st.cp = typeof pr.cp === 'string' ? pr.cp : null;
     st.bz = !!pr.bz;
+    const vc = pr.vc && typeof pr.vc === 'object' ? { inVoice: !!pr.vc.i, mic: !!pr.vc.m, speaking: !!pr.vc.s } : { inVoice: false, mic: false, speaking: false };
+    const vcChanged = JSON.stringify(vc) !== JSON.stringify(st.vc || {});
+    st.vc = vc;
     const prevDu = st.du;
     st.du = typeof pr.du === 'string' ? pr.du.slice(0, 24) : null;
     const outbox = Array.isArray(pr.o) ? pr.o : [];
@@ -381,6 +387,7 @@ export class RoomNet extends LocalNet {
       if (appChanged) this.later('look', { t: 'look', id, appearance: st.app });
     }
     if (!wasPresent && this.pfriends.has(id)) this.emitSocial();
+    if (st.shown && vcChanged) this.later('voice', { t: 'voice', id, ...vc });
     // spectators see other people's duels (armed characters)
     const inMine = this.pduel && (this.pduel.a === id || this.pduel.b === id);
     if (st.shown && !inMine && st.du !== prevDu) {

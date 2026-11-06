@@ -7,9 +7,12 @@ import { Input } from '../engine/input.js';
 import { World } from '../game/world.js';
 import { Net } from '../net/net.js';
 import { RoomNet } from '../net/roomNet.js';
+import { FirebaseNet } from '../net/firebaseNet.js';
 
 // eslint-disable-next-line no-undef
 const DEMO = typeof __DEMO__ !== 'undefined' && __DEMO__;
+// eslint-disable-next-line no-undef
+const FIREBASE = typeof __FIREBASE__ !== 'undefined' && __FIREBASE__;
 import { Voice } from '../net/voice.js';
 import { CarolPlayer } from '../audio/carol.js';
 import { DuelController } from '../game/duel.js';
@@ -40,7 +43,8 @@ export class App {
     const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
     this.demo = DEMO;
     if (DEMO) localStorage.removeItem('cw.token'); // in-page server starts fresh each load
-    this.net = DEMO ? new RoomNet() : new Net(wsUrl);
+    this.firebase = FIREBASE;
+    this.net = FIREBASE ? new FirebaseNet() : DEMO ? new RoomNet() : new Net(wsUrl);
     this.self = null;
     this.social = { friends: [], incoming: [], blocked: [], couple: null, party: null };
     this.notifications = [];
@@ -107,6 +111,7 @@ export class App {
     const card = el(`<div class="login"><div class="login-card glass">
       <div class="logo">Christmas World<small>✦ SEOUL ✦</small></div>
       <p>눈 내리는 서울의 크리스마스 거리에서<br/>사람들을 만나고, 이야기하고, 함께 걸어요.</p>
+      ${FIREBASE ? '<p class="note" style="margin-top:-8px">🎮 같은 주소로 들어온 사람들과 실시간으로 만나요. 🎙 근거리 음성 대화도 돼요! NPC 친구들도 함께 있어요.</p>' : ''}
       ${DEMO ? '<p class="note" style="margin-top:-8px">🎮 같은 링크로 들어온 사람들과 실시간으로 만나요. NPC 친구들도 함께 있어요. (음성 대화는 서버 버전에서 사용 가능)</p>' : ''}
       <div class="field"><label>닉네임 (2~12자)</label><input class="input" data-nick maxlength="12" placeholder="예) WinterRin♡" autocomplete="nickname"/></div>
       <div class="field"><label>코트 색</label><div class="swatches" data-coat>${APPEARANCE_OPTIONS.coat.map((c) => `<button class="swatch ${c === look.coat ? 'on' : ''}" data-v="${c}" style="background:${c}"></button>`).join('')}</div></div>
@@ -265,7 +270,7 @@ export class App {
   friendIds() { return new Set(this.social.friends.map((f) => f.id)); }
 
   updateNet(rtt) {
-    if (!this.netPill || this.demo) return;
+    if (!this.netPill || this.demo || this.net.counts) return;
     this.netPill.className = 'netpill' + (rtt > 250 ? ' warn' : '');
     this.netPill.textContent = `온라인 · ${rtt}ms`;
   }
@@ -438,7 +443,7 @@ export class App {
       if (this.net.connectedPeers !== undefined && this.netPill) {
         const n = this.net.connectedPeers;
         this.netPill.className = 'netpill';
-        this.netPill.textContent = this.net.room ? `접속 중 · 나 포함 ${n + 1}명` : '오프라인 데모';
+        this.netPill.textContent = this.net.room ? `접속 중 · 나 포함 ${n + 1}명` : this.firebase ? '연결 중…' : '오프라인 데모';
       }
     }, 2000);
     else this.countTimer = setInterval(() => fetch('/api/metrics').then((r) => r.json()).then((j) => { this.regionCounts = Object.fromEntries(j.rooms.map((r) => [r.id, r.players])); this.updateCards(); }).catch(() => {}), 20000);

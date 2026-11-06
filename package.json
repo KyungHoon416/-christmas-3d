@@ -11,17 +11,21 @@
     "build": "vite build",
     "start": "node server/index.js",
     "start:https": "node server/index.js --https",
+    "build:firebase": "vite build --mode firebase",
+    "deploy:firebase": "vite build --mode firebase && firebase deploy --only hosting,database",
     "test": "node --test tests/*.test.js",
     "test:e2e": "node tests/e2e/run-e2e.mjs",
     "loadtest": "node scripts/loadtest.js",
     "thumbs": "node scripts/thumbs.mjs"
   },
   "dependencies": {
+    "firebase": "^11.10.0",
     "selfsigned": "^2.4.1",
     "three": "0.170.0",
     "ws": "8.18.0"
   },
   "devDependencies": {
+    "firebase-tools": "^14.11.0",
     "vite": "5.4.11"
   },
   "engines": {
