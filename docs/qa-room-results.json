@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-06T09:21:13.639Z",
+  "results": [
+    {
+      "id": "R-01",
+      "name": "같은 링크의 두 사람이 서로를 봄 (presence 동기화)",
+      "ok": true,
+      "detail": "p_hvqjgdb1ak / p_ytwx2w0hkf"
+    },
+    {
+      "id": "R-02",
+      "name": "이동 동기화",
+      "ok": true,
+      "detail": "Δ=0.00m"
+    },
+    {
+      "id": "R-03",
+      "name": "채팅 전달",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "R-04",
+      "name": "귓속말 전달",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "R-05",
+      "name": "손잡고 함께 이동",
+      "ok": true,
+      "detail": "follower moved 2.92m"
+    },
+    {
+      "id": "R-06",
+      "name": "1:1 눈싸움 대결 시작 (양쪽)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "R-07",
+      "name": "명중 판정과 체력이 양쪽에서 일치",
+      "ok": true,
+      "detail": "B hp on A=80, on B=80"
+    },
+    {
+      "id": "R-08",
+      "name": "항복 → 양쪽 대결 종료, 승자 기록",
+      "ok": true,
+      "detail": "{\"w\":1,\"l\":0,\"d\":0}"
+    },
+    {
+      "id": "R-09",
+      "name": "페이지 오류 없음",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

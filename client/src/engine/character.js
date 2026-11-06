@@ -55,6 +55,8 @@ export class Character {
   }
 
   build(a) {
+    const gun = this.gun;
+    gun?.removeFromParent();
     this.appearance = { ...APPEARANCE_DEFAULT, ...a };
     const A = this.appearance;
     this.body.clear();
@@ -111,8 +113,8 @@ export class Character {
       return { hp, kn };
     };
     this.legL = mkLeg(-1); this.legR = mkLeg(1);
-    // simple blob shadow (cheap contact shadow for low quality)
     this.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
+    if (gun) this.armR.el.add(gun);
   }
 
   setAppearance(a) { this.build(a); }
@@ -191,6 +193,16 @@ export class Character {
       arm.sh.rotation.x = -0.15;
       arm.sh.rotation.z = 0.45 * this.holdSide;
       arm.el.rotation.x = -0.1;
+    }
+    // snow-gun aiming pose (both hands forward) with a little recoil kick
+    if (this.aiming) {
+      this.recoil = Math.max(0, (this.recoil || 0) - dt);
+      const k = this.recoil * 3;
+      aR.sh.rotation.set(-1.5 - k, 0.08, 0.05);
+      aR.el.rotation.set(-0.05 - k * 0.5, 0, 0);
+      aL.sh.rotation.set(-1.3, -0.55, 0);
+      aL.el.rotation.set(-0.55, 0, 0);
+      this.torso.rotation.x = Math.min(this.torso.rotation.x, 0.08);
     }
     // scarf tail sways with movement/wind
     this.scarfTail.rotation.x = 0.2 + (moving ? 0.5 + Math.sin(ph * 2) * 0.15 : Math.sin(this.time * 2) * 0.08);

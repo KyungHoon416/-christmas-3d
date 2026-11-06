@@ -44,3 +44,20 @@ The repository was empty (no commits, no branches, no other accessible repo — 
 - `npm test` — 18 passing (collision, regions, voice curve, server integration).
 - `npm run test:e2e` — real-browser suite, see `QA_REPORT.md` and `qa-e2e-results.json`.
 - `node scripts/loadtest.js` — 50-bot room load test.
+
+## Update — artifact multiplayer & 1:1 snowball-gun duel
+
+### Playable artifact (`npm run build` → `node scripts/build-artifact.mjs`)
+- `client/src/net/localServer.js` runs the real `server/game.js` inside the page with NPC players (3 per region) that walk, chat, emote, answer whispers, accept requests and fight duels.
+- `client/src/net/roomNet.js` adds **real multiplayer through the Claude artifact `room` capability**. Every page publishes one presence object (nickname, look, region, live pose, busy/couple/duel flags) plus an outbox of the last 6 events (chat, whisper, emotes, requests/answers, shots, hits). Presence can be set by every admitted viewer, so view-only invitees can play too. Peers appear as ordinary remote players (`p_<peer>`).
+- Limits: no voice (WebRTC blocked in artifacts); friendships/couples with real people last for the session only; whispers are hidden in the UI but travel in presence, so they are not cryptographically private; the room only admits signed-in members of the owning organization and invited guests — people opening a public link play with NPCs only.
+
+### 1:1 snowball-gun duel (replaces free snowball throwing)
+- Challenge anyone within 40 m (action bar "눈싸움", player menu, F key, or NPC challenges); consent required.
+- Both players get a snow blaster; over-the-shoulder aim with centre crosshair; click/F/mobile button to fire; 6-round magazine, R to reload; 100 HP, −20 per hit, 2-minute limit, forfeit button; results and W/L/D record.
+- Server (`server/game.js`): `duel` request kind, shot relay with origin check and rate limit, victim-reported hits validated against recent opponent shots, KO/time/forfeit/leave endings. Peer duels run the same rules in `roomNet.js`.
+- Fixes found while testing: crosshair ray could hit someone standing between camera and player (now starts beyond the player; never fires backwards); fast shots could tunnel through a body between frames (flight is now sub-stepped every ~17 cm).
+
+### Tests
+- `npm test` — 20/20 (adds 2 duel server tests).
+- `tests/e2e/room-e2e.mjs` — two browser pages meeting through a mocked `room`: presence, movement, chat, whisper, hand-holding, duel start, hit/HP agreement on both sides, forfeit + record: 9/9 (`docs/qa-room-results.json`).

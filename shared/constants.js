@@ -30,6 +30,14 @@ export const HOLD_MAX_DISTANCE = 6; // hand-hold auto-release distance
 export const HOLD_SIDE_OFFSET = 0.75;
 
 export const CHAT_MAX_LEN = 200;
+
+// 1:1 snowball-gun duel
+export const DUEL = {
+  hp: 100, damage: 20, seconds: 120, countdown: 3,
+  range: 40, // max distance to challenge (m)
+  shotSpeed: 34, shotGravity: 4, shotLife: 1.3, hitRadius: 0.55,
+  mag: 6, reload: 1.4, fireInterval: 0.28, maxShotsPerSec: 5,
+};
 export const CHAT_RATE = { burst: 6, perSec: 1.5 };
 export const NICK_RE = /^[\p{L}\p{N}_\-♡☆♥ ]{2,12}$/u;
 

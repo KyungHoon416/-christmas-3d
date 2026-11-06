@@ -5,12 +5,12 @@ import crypto from 'node:crypto';
 import {
   PROTOCOL_VERSION, RUN_SPEED, MAX_SPEED_TOLERANCE, NET_TICK_HZ, DETAIL_RADIUS, FAR_EVERY,
   NEARBY_CHAT_RADIUS, INTERACT_RADIUS, HOLD_MAX_DISTANCE, CHAT_MAX_LEN, CHAT_RATE, NICK_RE,
-  EMOTES, VOICE_DISCONNECT, sanitizeAppearance,
+  EMOTES, VOICE_DISCONNECT, sanitizeAppearance, DUEL,
 } from '../shared/constants.js';
 import { REGIONS, getRegion, DEFAULT_REGION } from '../shared/regions.js';
 import { CollisionWorld } from '../shared/collision.js';
 
-const ANIMS = new Set(['idle', 'walk', 'run', 'jump', 'wave', 'heart', 'dance', 'cheer', 'bow', 'sit', 'hug', 'skate', 'throw']);
+const ANIMS = new Set(['idle', 'walk', 'run', 'jump', 'wave', 'heart', 'dance', 'cheer', 'bow', 'sit', 'hug', 'skate', 'throw', 'aim']);
 const REQ_TTL = 30000;
 const PARTY_MAX = 6;
 const now = () => Date.now();
@@ -44,6 +44,7 @@ export class Game {
     }
     this.requests = new Map();
     this.parties = new Map();
+    this.duels = new Map();
     this.history = { all: [] };
     this.metrics = { msgsIn: 0, bytesOut: 0, tickMs: 0, rejectedMoves: 0, started: now() };
     this.chatSeq = 0;
@@ -95,6 +96,9 @@ export class Game {
       case 'party': if (msg.op === 'leave') this.leaveParty(s); return;
       case 'throw': return this.throwBall(s, msg);
       case 'hit': return this.hit(s, msg);
+      case 'shot': return this.shot(s, msg);
+      case 'dhit': return this.duelHit(s, msg);
+      case 'forfeit': return s.duel && this.endDuel(s.duel, this.opponent(s.duel, s.user.id), 'forfeit');
       case 'read': return; // read receipts are client-side only for now
       default: return conn.send({ t: 'error', code: 'unknown', m: msg.t });
     }
@@ -123,7 +127,7 @@ export class Game {
     const s = {
       user, conn, room: null, pos: { x: 0, y: 0, z: 0 }, ry: 0, anim: 'idle', lastPose: 0,
       chatBucket: new Bucket(CHAT_RATE.burst, CHAT_RATE.perSec), reqBucket: new Bucket(5, 0.5),
-      throwBucket: new Bucket(3, 1.5), voice: { inVoice: false, mic: false, speaking: false },
+      throwBucket: new Bucket(3, 1.5), shotBucket: new Bucket(DUEL.mag, DUEL.maxShotsPerSec), duel: null, voice: { inVoice: false, mic: false, speaking: false },
       hold: null, party: old?.party || null, strikes: 0,
     };
     conn.session = s;
@@ -181,6 +185,7 @@ export class Game {
     const room = s.room;
     if (!room) return;
     this.releaseHold(s, 'leave');
+    if (s.duel) this.endDuel(s.duel, this.opponent(s.duel, s.user.id), 'left');
     room.players.delete(s);
     s.user.lastPos = { ...s.pos };
     s.room = null;
@@ -247,6 +252,7 @@ export class Game {
       }
       for (const [k, th] of room.throws) if (now() - th.t > 4000) room.throws.delete(k);
     }
+    this.tickDuels();
     this.metrics.tickMs = this.metrics.tickMs * 0.9 + (performance.now() - t0) * 0.1;
   }
 
@@ -315,7 +321,7 @@ export class Game {
     const kind = m.kind;
     const target = this.sessions.get(m.to);
     const fail = (err) => this.send(s, { t: 'reqResult', kind, to: m.to, ok: false, err });
-    if (!['friend', 'couple', 'holdHand', 'walk', 'hug', 'party', 'invite', 'voice'].includes(kind)) return fail('kind');
+    if (!['friend', 'couple', 'holdHand', 'walk', 'hug', 'party', 'invite', 'voice', 'duel'].includes(kind)) return fail('kind');
     if (!s.reqBucket.take()) return fail('rate');
     let targetUser = target?.user || null;
     if (kind === 'friend' && !targetUser) {
@@ -353,6 +359,12 @@ export class Game {
       if (target.party && target.party === s.party) return fail('already');
     }
     if (kind === 'invite' && !s.room) return fail('room');
+    if (kind === 'duel') {
+      if (!s.room || s.room !== target.room) return fail('room');
+      if (dist2(s.pos, target.pos) > DUEL.range) return fail('far');
+      if (s.duel || target.duel) return fail('busy');
+      if (s.hold || target.hold) return fail('busy');
+    }
     for (const r of this.requests.values()) if (r.from === me.id && r.to === targetUser.id && r.kind === kind) return fail('pending');
     const id = rid();
     const req = { id, kind, from: me.id, to: targetUser.id, t: now(), region: s.room?.id };
@@ -408,6 +420,11 @@ export class Game {
       }
       case 'voice':
         return result(true);
+      case 'duel': {
+        if (s.room !== from.room || s.duel || from.duel) return result(false, 'busy');
+        result(true);
+        return this.startDuel(from, s);
+      }
       case 'invite': {
         result(true);
         if (req.region) this.join(s, req.region);
@@ -564,6 +581,66 @@ export class Game {
     const data = m.data;
     if (!data || typeof data !== 'object' || JSON.stringify(data).length > 12000) return;
     this.send(to, { t: 'rtc', from: s.user.id, data });
+  }
+
+  // ------------------------------------------------------------ 1:1 snowball-gun duel
+  // Shots are relayed to the whole room (spectators see them). Hits are reported by
+  // the player who got hit (victim-authoritative), validated against a recent shot
+  // from the opponent, and scored here.
+  startDuel(a, b) {
+    const id = rid();
+    const now = Date.now();
+    const d = { id, a: a.user.id, b: b.user.id, hp: { [a.user.id]: DUEL.hp, [b.user.id]: DUEL.hp }, room: a.room, startAt: now + DUEL.countdown * 1000, ends: now + (DUEL.countdown + DUEL.seconds) * 1000, shots: new Map() };
+    this.duels.set(id, d);
+    a.duel = d; b.duel = d;
+    this.releaseHold(a, 'duel'); this.releaseHold(b, 'duel');
+    this.broadcastRoom(a.room, { t: 'duel', id, a: d.a, b: d.b, hp: d.hp, countdown: DUEL.countdown, seconds: DUEL.seconds });
+    return d;
+  }
+
+  opponent(d, id) { return d.a === id ? d.b : d.a; }
+
+  shot(s, m) {
+    const d = s.duel;
+    if (!d || !s.room || Date.now() < d.startAt - 300) return;
+    if (!s.shotBucket.take()) return;
+    const o = m.o, dir = m.d;
+    if (![o, dir].every((v) => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite))) return;
+    if (Math.hypot(o[0] - s.pos.x, o[1] - s.pos.y - 1.3, o[2] - s.pos.z) > 2.5) return; // must fire from own body
+    const len = Math.hypot(...dir) || 1;
+    const sid = String(m.sid || rid()).slice(0, 24);
+    d.shots.set(sid, { t: Date.now(), by: s.user.id });
+    if (d.shots.size > 40) d.shots.delete(d.shots.keys().next().value);
+    this.broadcastRoom(s.room, { t: 'shot', sid, by: s.user.id, duel: d.id, o, d: dir.map((v) => v / len) });
+  }
+
+  duelHit(s, m) {
+    const d = s.duel;
+    if (!d || m.duel !== d.id) return;
+    const sh = d.shots.get(m.sid);
+    const opp = this.opponent(d, s.user.id);
+    if (!sh || sh.by !== opp || Date.now() - sh.t > 3000) return;
+    d.shots.delete(m.sid);
+    d.hp[s.user.id] = Math.max(0, d.hp[s.user.id] - DUEL.damage);
+    this.broadcastRoom(d.room, { t: 'dscore', id: d.id, hp: d.hp, victim: s.user.id, by: opp });
+    if (d.hp[s.user.id] <= 0) this.endDuel(d, opp, 'ko');
+  }
+
+  endDuel(d, winner, reason) {
+    if (!this.duels.has(d.id)) return;
+    this.duels.delete(d.id);
+    for (const id of [d.a, d.b]) { const x = this.sessions.get(id); if (x && x.duel === d) x.duel = null; }
+    const nick = (id) => this.store.get(id)?.nick || '?';
+    this.broadcastRoom(d.room, { t: 'duelEnd', id: d.id, a: d.a, b: d.b, winner, reason, hp: d.hp, winnerNick: winner ? nick(winner) : null });
+  }
+
+  tickDuels() {
+    const now = Date.now();
+    for (const d of [...this.duels.values()]) {
+      if (now < d.ends) continue;
+      const ha = d.hp[d.a], hb = d.hp[d.b];
+      this.endDuel(d, ha === hb ? null : ha > hb ? d.a : d.b, 'time');
+    }
   }
 
   // ------------------------------------------------------------ snowball mini-game

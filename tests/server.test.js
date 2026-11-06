@@ -219,3 +219,48 @@ test('metrics endpoint', async () => {
   assert.ok(j.online >= 1);
   assert.equal(j.rooms.length, 6);
 });
+
+test('1:1 snowball-gun duel: consent, shots relayed, victim-reported hits, KO ends duel', async () => {
+  const a = await client('총잡이A');
+  const b = await client('총잡이B');
+  await walkTo(a, -12, 45); await walkTo(b, -4, 45);
+  a.send({ t: 'req', kind: 'duel', to: b.id });
+  const req = await b.wait((m) => m.t === 'req' && m.kind === 'duel');
+  b.send({ t: 'resp', id: req.id, accept: true });
+  const start = await a.wait('duel');
+  assert.equal(start.a, a.id);
+  assert.equal(start.hp[b.id], 100);
+  await sleep(3100); // countdown
+  // a shot from far away from the shooter's body is rejected
+  a.send({ t: 'shot', sid: 'bad', o: [0, 1, 0], d: [1, 0, 0] });
+  assert.ok(await b.none((m) => m.t === 'shot' && m.sid === 'bad', 300));
+  // a hit reported without a matching shot is ignored
+  b.send({ t: 'dhit', duel: start.id, sid: 'nope' });
+  assert.ok(await a.none('dscore', 300));
+  let end;
+  for (let i = 0; i < 5; i++) {
+    const sid = 's' + i;
+    a.send({ t: 'shot', sid, o: [a.joined.pos.x, 1.3, a.joined.pos.z], d: [1, 0, 0] });
+    await b.wait((m) => m.t === 'shot' && m.sid === sid);
+    b.send({ t: 'dhit', duel: start.id, sid });
+    const sc = await a.wait('dscore');
+    assert.equal(sc.hp[b.id], 100 - 20 * (i + 1));
+    await sleep(220);
+  }
+  end = await a.wait('duelEnd');
+  assert.equal(end.winner, a.id);
+  assert.equal(end.reason, 'ko');
+});
+
+test('duel ends with a win for the opponent when a player leaves', async () => {
+  const a = await client('도망A');
+  const b = await client('도망B');
+  a.send({ t: 'req', kind: 'duel', to: b.id });
+  const req = await b.wait((m) => m.t === 'req' && m.kind === 'duel');
+  b.send({ t: 'resp', id: req.id, accept: true });
+  await a.wait('duel');
+  b.close();
+  const end = await a.wait('duelEnd');
+  assert.equal(end.winner, a.id);
+  assert.equal(end.reason, 'left');
+});

@@ -1,24 +1,25 @@
 // Application shell: HUD layout, dialogs and wiring between net, world, voice and audio.
 import * as THREE from 'three';
 import { REGIONS, getRegion } from '../../../shared/regions.js';
-import { APPEARANCE_OPTIONS, APPEARANCE_DEFAULT, INTERACT_RADIUS, NICK_RE } from '../../../shared/constants.js';
+import { APPEARANCE_OPTIONS, APPEARANCE_DEFAULT, INTERACT_RADIUS, NICK_RE, DUEL } from '../../../shared/constants.js';
 import { Engine } from '../engine/engine.js';
 import { Input } from '../engine/input.js';
 import { World } from '../game/world.js';
 import { Net } from '../net/net.js';
-import { LocalNet } from '../net/localServer.js';
+import { RoomNet } from '../net/roomNet.js';
 
 // eslint-disable-next-line no-undef
 const DEMO = typeof __DEMO__ !== 'undefined' && __DEMO__;
 import { Voice } from '../net/voice.js';
 import { CarolPlayer } from '../audio/carol.js';
+import { DuelController } from '../game/duel.js';
 import { Chat } from './chat.js';
 import { Minimap, drawRegion } from './minimap.js';
 import { el, $, $$, esc, avatar, toast, modal, confirmDialog } from './dom.js';
 import { icon } from './icons.js';
 
-const REQ_LABEL = { friend: '친구 신청', couple: '커플 신청', holdHand: '손잡기 요청', walk: '함께 걷기 요청', hug: '포옹 요청', party: '파티 초대', invite: '같은 장소로 초대', voice: '음성 대화 초대' };
-const REQ_ERR = { far: '상대가 너무 멀리 있어요 (4m 이내로 다가가세요)', busy: '이미 손을 잡고 있거나 상대가 다른 상호작용 중입니다', adult: '커플 기능은 성인 확인을 한 사용자끼리만 이용할 수 있습니다', taken: '이미 커플 상태인 사용자입니다', notfriend: '커플 신청은 친구에게만 할 수 있습니다', offline: '상대가 오프라인입니다', blocked: '차단 관계인 사용자입니다', rate: '요청이 너무 잦습니다. 잠시 후 다시 시도하세요', pending: '이미 보낸 요청이 대기 중입니다', declined: '상대가 거절했습니다', expired: '요청 시간이 만료되었습니다', room: '같은 지역에 있어야 합니다', already: '이미 처리된 요청입니다', notfound: '사용자를 찾을 수 없습니다', full: '파티 인원이 가득 찼습니다' };
+const REQ_LABEL = { duel: '1:1 눈싸움 대결 신청', friend: '친구 신청', couple: '커플 신청', holdHand: '손잡기 요청', walk: '함께 걷기 요청', hug: '포옹 요청', party: '파티 초대', invite: '같은 장소로 초대', voice: '음성 대화 초대' };
+const REQ_ERR = { unsupported: '이 상대와는 이 기능을 쓸 수 없어요', far: '상대가 너무 멀리 있어요', busy: '이미 손을 잡고 있거나 상대가 다른 상호작용 중입니다', adult: '커플 기능은 성인 확인을 한 사용자끼리만 이용할 수 있습니다', taken: '이미 커플 상태인 사용자입니다', notfriend: '커플 신청은 친구에게만 할 수 있습니다', offline: '상대가 오프라인입니다', blocked: '차단 관계인 사용자입니다', rate: '요청이 너무 잦습니다. 잠시 후 다시 시도하세요', pending: '이미 보낸 요청이 대기 중입니다', declined: '상대가 거절했습니다', expired: '요청 시간이 만료되었습니다', room: '같은 지역에 있어야 합니다', already: '이미 처리된 요청입니다', notfound: '사용자를 찾을 수 없습니다', full: '파티 인원이 가득 찼습니다' };
 const EMOTE_LIST = [['wave', '👋', '인사'], ['heart', '💗', '하트'], ['cheer', '🙌', '환호'], ['bow', '🙇', '꾸벅'], ['sit', '🪑', '앉기'], ['dance', '💃', '춤']];
 
 export class App {
@@ -39,7 +40,7 @@ export class App {
     const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
     this.demo = DEMO;
     if (DEMO) localStorage.removeItem('cw.token'); // in-page server starts fresh each load
-    this.net = DEMO ? new LocalNet() : new Net(wsUrl);
+    this.net = DEMO ? new RoomNet() : new Net(wsUrl);
     this.self = null;
     this.social = { friends: [], incoming: [], blocked: [], couple: null, party: null };
     this.notifications = [];
@@ -51,6 +52,7 @@ export class App {
       onRemoteAdded: (r) => this.addLabel(r.id, r.nick),
       onRemoteRemoved: (r) => this.removeLabel(r.id),
       onFollowerTriedMove: () => this.hintRelease(),
+      onFire: () => this.duel.fire(),
     });
     this.voice = new Voice(this.net, this.world, {
       onSpeaking: (id, on) => { this.labels.get(id)?.el.classList.toggle('speaking', on); if (id === this.self?.id) this.micBtn?.classList.toggle('speaking', on); },
@@ -59,6 +61,7 @@ export class App {
       onDuck: (on) => this.carol.setDuck(on),
     });
     this.carol = new CarolPlayer();
+    this.duel = new DuelController(this);
     this.carol.onSong = (t) => { if (this.carolTitle) this.carolTitle.textContent = t; };
     this.bindNet();
     this.showLogin();
@@ -104,7 +107,7 @@ export class App {
     const card = el(`<div class="login"><div class="login-card glass">
       <div class="logo">Christmas World<small>✦ SEOUL ✦</small></div>
       <p>눈 내리는 서울의 크리스마스 거리에서<br/>사람들을 만나고, 이야기하고, 함께 걸어요.</p>
-      ${DEMO ? '<p class="note" style="margin-top:-8px">🎮 오프라인 데모: 게임 서버가 이 페이지 안에서 실행되고, NPC 친구들이 함께 놀아요. (음성 대화는 로컬 서버 실행 시 사용 가능)</p>' : ''}
+      ${DEMO ? '<p class="note" style="margin-top:-8px">🎮 같은 링크로 들어온 사람들과 실시간으로 만나요. NPC 친구들도 함께 있어요. (음성 대화는 서버 버전에서 사용 가능)</p>' : ''}
       <div class="field"><label>닉네임 (2~12자)</label><input class="input" data-nick maxlength="12" placeholder="예) WinterRin♡" autocomplete="nickname"/></div>
       <div class="field"><label>코트 색</label><div class="swatches" data-coat>${APPEARANCE_OPTIONS.coat.map((c) => `<button class="swatch ${c === look.coat ? 'on' : ''}" data-v="${c}" style="background:${c}"></button>`).join('')}</div></div>
       <div class="field"><label>모자</label><div class="swatches" data-hat>${[['earmuff', '귀마개'], ['beanie', '비니'], ['santa', '산타'], ['none', '없음']].map(([v, l]) => `<button class="chip ${v === look.hat ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div></div>
@@ -241,6 +244,10 @@ export class App {
       if (m.by === this.self.id) toast(`🎯 명중! (점수 ${m.score})`);
     });
     n.on('notice', (m) => this.notify(m.m));
+    n.on('duel', (m) => { this.duel.onDuel(m); this.updateActionState(); });
+    n.on('shot', (m) => this.duel.onShot(m));
+    n.on('dscore', (m) => this.duel.onScore(m));
+    n.on('duelEnd', (m) => { this.duel.onEnd(m); this.updateActionState(); });
     n.on('rtt', (m) => this.updateNet(m.rtt));
     n.on('status', (m) => {
       if (!this.netPill) return;
@@ -258,7 +265,7 @@ export class App {
   friendIds() { return new Set(this.social.friends.map((f) => f.id)); }
 
   updateNet(rtt) {
-    if (!this.netPill) return;
+    if (!this.netPill || this.demo) return;
     this.netPill.className = 'netpill' + (rtt > 250 ? ' warn' : '');
     this.netPill.textContent = `온라인 · ${rtt}ms`;
   }
@@ -336,7 +343,7 @@ export class App {
     runBtn.onclick = () => { this.input.runToggle = !this.input.runToggle; runBtn.classList.toggle('on', this.input.runToggle); };
 
     // action bar
-    const acts = [['emotes', 'emoji', '이모티콘'], ['wave', 'wave', '인사'], ['heart', 'heart', '하트'], ['holdHand', 'hands', '손잡기'], ['hug', 'hug', '포옹'], ['dance', 'dance', '댄스'], ['walk', 'walk', '함께걷기'], ['photo', 'camera', '사진'], ['snowball', 'snowball', '눈덩이']];
+    const acts = [['emotes', 'emoji', '이모티콘'], ['wave', 'wave', '인사'], ['heart', 'heart', '하트'], ['holdHand', 'hands', '손잡기'], ['hug', 'hug', '포옹'], ['dance', 'dance', '댄스'], ['walk', 'walk', '함께걷기'], ['photo', 'camera', '사진'], ['duel', 'snowball', '눈싸움']];
     this.actionsEl = el(`<div class="actions glass">${acts.map(([k, ic, l]) => `<button data-a="${k}">${icon(ic, 24)}<span>${l}</span></button>`).join('')}</div>`);
     R.appendChild(this.actionsEl);
     $$('[data-a]', this.actionsEl).forEach((b) => (b.onclick = () => this.action(b.dataset.a, b)));
@@ -372,12 +379,14 @@ export class App {
     R.appendChild(joy);
     this.input.joystickEl = joy; this.input.knob = $('.knob', joy);
     const mctl = el(`<div class="mctl">
-      <button class="roundbtn" data-m="snowball">${icon('snowball', 22)}</button>
+      <button class="roundbtn big" data-m="fire" title="발사">${icon('snowball', 28)}</button>
       <button class="roundbtn big" data-m="jump">${icon('jump', 26)}</button></div>`);
     R.appendChild(mctl);
     $('[data-m="jump"]', mctl).addEventListener('touchstart', (e) => { this.input.jumpQueued = true; e.preventDefault(); }, { passive: false });
     $('[data-m="jump"]', mctl).onclick = () => { this.input.jumpQueued = true; };
-    $('[data-m="snowball"]', mctl).onclick = () => this.world.throwSnowball();
+    const fireBtn = $('[data-m="fire"]', mctl);
+    fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if (!this.duel.fire()) this.requestDuel(); }, { passive: false });
+    fireBtn.onclick = () => { if (!this.duel.fire()) this.requestDuel(); };
     const mtop = el(`<div class="mtopbtns">
       <button class="roundbtn" data-o="chat">${icon('chat', 20)}<span class="badge" data-chatbadge></span></button>
       <button class="roundbtn" data-o="friends">${icon('users', 20)}</button>
@@ -389,7 +398,8 @@ export class App {
 
     // keyboard shortcuts
     this.input.onKey = (e) => {
-      if (e.code === 'KeyF') this.world.throwSnowball();
+      if (e.code === 'KeyF') { if (!this.duel.fire()) this.requestDuel(); }
+      else if (e.code === 'KeyR') this.duel.reload();
       else if (e.code === 'KeyM') this.openMenu('map');
       else if (e.code === 'KeyV') this.toggleMic();
       else if (e.code === 'Digit1') this.emote('wave');
@@ -403,7 +413,14 @@ export class App {
 
     this.engine.onFrame = (dt) => this.frame(dt);
     // keep region player counts fresh
-    if (this.net.counts) this.countTimer = setInterval(() => { this.regionCounts = this.net.counts(); this.updateCards(); }, 3000);
+    if (this.net.counts) this.countTimer = setInterval(() => {
+      this.regionCounts = this.net.counts(); this.updateCards();
+      if (this.net.connectedPeers !== undefined && this.netPill) {
+        const n = this.net.connectedPeers;
+        this.netPill.className = 'netpill';
+        this.netPill.textContent = this.net.room ? `접속 중 · 나 포함 ${n + 1}명` : '오프라인 데모';
+      }
+    }, 2000);
     else this.countTimer = setInterval(() => fetch('/api/metrics').then((r) => r.json()).then((j) => { this.regionCounts = Object.fromEntries(j.rooms.map((r) => [r.id, r.players])); this.updateCards(); }).catch(() => {}), 20000);
     this.renderFriends();
     this.updateCarolUI();
@@ -428,6 +445,7 @@ export class App {
   frame(dt) {
     this.world.update(dt);
     this.minimap?.update(dt);
+    this.duel.update(dt);
     this.updateLabels();
     if (this.statsEl) {
       this.statsAcc = (this.statsAcc || 0) + dt;
@@ -629,6 +647,7 @@ export class App {
       !isFriend && ['friend', 'userPlus', '친구 추가'],
       ['whisper', 'mail', '귓속말'],
       r && ['voice', 'headset', '음성 대화 초대'],
+      r && !this.duel.inDuel && ['duel', 'snowball', '1:1 눈싸움 대결'],
       r && ['holdHand', 'hands', `손잡기 요청${near ? '' : ' (가까이)'}`],
       r && ['walk', 'walk', `함께 걷기${near ? '' : ' (가까이)'}`],
       r && ['hug', 'hug', `포옹 요청${near ? '' : ' (가까이)'}`],
@@ -678,6 +697,7 @@ export class App {
         this.net.send({ t: 'req', kind: 'voice', to: id }); break;
       case 'holdHand': case 'walk': case 'hug':
         this.requestInteraction(k, id); break;
+      case 'duel': this.requestDuel(id); break;
       case 'couple':
         if (!this.self.adult) return toast('커플 기능은 성인 확인(로그인 시 체크)한 사용자만 이용할 수 있어요', { type: 'err' });
         if (await confirmDialog('커플 신청', `${esc(nick)}님에게 커플을 신청할까요?<br/>상대가 수락해야만 커플이 됩니다.`, '신청')) this.net.send({ t: 'req', kind: 'couple', to: id });
@@ -780,7 +800,7 @@ export class App {
     if (['wave', 'heart', 'dance'].includes(k)) return this.emote(k);
     if (k === 'holdHand' || k === 'walk' || k === 'hug') return this.requestInteraction(k);
     if (k === 'photo') return this.photoMode(true);
-    if (k === 'snowball') return this.world.throwSnowball();
+    if (k === 'duel') return this.duel.inDuel ? this.duel.forfeit() : this.requestDuel();
   }
 
   updateActionState() {
@@ -791,6 +811,9 @@ export class App {
     wb.classList.toggle('on', !!h && h.mode === 'walk');
     $('span', hb).textContent = h?.mode === 'hand' ? '손 놓기' : '손잡기';
     $('span', wb).textContent = h?.mode === 'walk' ? '그만 걷기' : '함께걷기';
+    const db = $('[data-a="duel"]', this.actionsEl);
+    db.classList.toggle('on', this.duel.inDuel);
+    $('span', db).textContent = this.duel.inDuel ? '항복' : '눈싸움';
   }
 
   // ================================================================= voice
@@ -926,15 +949,32 @@ export class App {
   }
 
   openEvents(onClose) {
-    const sc = [...this.scores].sort((a, b) => b[1] - a[1]).slice(0, 10);
-    modal('시즌 이벤트 · 크리스마스 한정', `
-      <div class="section-title">❄️ 눈싸움 대회 (실시간 · ${esc(this.world.region.name)})</div>
-      <p class="note">PC: <b>F</b> 키 / 모바일·하단 바: <b>눈덩이</b> 버튼. 다른 사람을 맞히면 점수를 얻어요. 서버가 투척 기록과 거리를 검증합니다.</p>
-      ${sc.length ? `<ol>${sc.map(([n, s]) => `<li>${esc(n)} — ${s}점</li>`).join('')}</ol>` : '<p class="note">아직 기록이 없어요. 첫 명중의 주인공이 되어 보세요!</p>'}
+    const st = this.duel.stats;
+    const m = modal('시즌 이벤트 · 크리스마스 한정', `
+      <div class="section-title">❄️ 1:1 눈덩이 총 대결</div>
+      <p class="note">하단 <b>눈싸움</b> 버튼이나 캐릭터 메뉴에서 ${DUEL.range}m 안의 상대에게 대결을 신청하세요. 수락하면 둘 다 눈덩이 총을 들고 3초 뒤 시작해요.<br/>
+      • 체력 ${DUEL.hp} · 한 발 맞으면 -${DUEL.damage} (${DUEL.hp / DUEL.damage}발이면 승리) · 제한 시간 ${DUEL.seconds / 60}분<br/>
+      • 화면 중앙 조준점으로 조준 → <b>클릭</b> 또는 <b>F</b>로 발사, 탄창 ${DUEL.mag}발 · <b>R</b> 재장전 · 모바일은 오른쪽 아래 눈덩이 버튼<br/>
+      • 마우스 드래그로 조준 방향을 돌리고, WASD로 옆걸음하며 피하세요. 건물과 트리는 엄폐물이 됩니다.</p>
+      <p><b>내 전적:</b> ${st.w}승 ${st.l}패 ${st.d}무</p>
+      <button class="btn primary" data-duelnow>가장 가까운 상대에게 대결 신청</button>
       <div class="section-title">🎄 트리 점등 & 포토존</div>
       <p class="note">광화문광장 메인 트리, 서울광장 스케이트장, 청계천 빛 터널, DDP 미디어아트, 남산 사랑의 자물쇠 포토존을 방문해 사진 모드(P)로 기념사진을 남겨 보세요.</p>
       <div class="section-title">🎵 캐럴</div>
       <p class="note">우측 하단 플레이어에서 재생/일시정지/음량을 조절할 수 있어요. 음성 대화 중에는 자동으로 배경음이 줄어듭니다.</p>`, { onClose });
+    $('[data-duelnow]', m).onclick = () => { m.close(); this.requestDuel(); };
+  }
+
+  requestDuel(id = null) {
+    if (this.duel.inDuel) return;
+    let target = id && this.world.remotes.has(id) ? id : null;
+    if (!target && this.selected && this.world.distanceTo(this.selected) <= DUEL.range) target = this.selected;
+    if (!target) {
+      let bd = DUEL.range;
+      for (const r of this.world.remotes.values()) { const d = this.world.distanceTo(r.id); if (d < bd) { bd = d; target = r.id; } }
+    }
+    if (!target) return toast(`${DUEL.range}m 안에 대결할 상대가 없어요. 캐릭터를 눌러 선택하거나 가까이 가 보세요.`);
+    this.net.send({ t: 'req', kind: 'duel', to: target });
   }
 
   openProfile(onClose) {

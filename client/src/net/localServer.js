@@ -3,7 +3,7 @@
 // around every region, chat, emote, throw snowballs and answer social requests, so the
 // world can be played where WebSockets are not available (e.g. a Claude artifact).
 import { Game } from '../../../server/game.js';
-import { PROTOCOL_VERSION, APPEARANCE_OPTIONS, HOLD_SIDE_OFFSET } from '../../../shared/constants.js';
+import { PROTOCOL_VERSION, APPEARANCE_OPTIONS, HOLD_SIDE_OFFSET, DUEL } from '../../../shared/constants.js';
 import { REGIONS, getRegion } from '../../../shared/regions.js';
 import { CollisionWorld } from '../../../shared/collision.js';
 import cryptoShim from './cryptoShim.js';
@@ -61,12 +61,68 @@ class Bot {
         if (m.ch === 'whisper' && m.to === this.id) setTimeout(() => this.send({ t: 'chat', ch: 'whisper', to: m.from, text: pick(WHISPER_REPLIES), cid: 0 }), 1500 + Math.random() * 1500);
         break;
       case 'hug': if (m.b === this.id || m.a === this.id) this.pause = 3; break;
+      case 'duel':
+        if (m.a === this.id || m.b === this.id) {
+          this.duel = { id: m.id, opp: m.a === this.id ? m.b : m.a, startAt: performance.now() + m.countdown * 1000, nextShot: 0, ammo: DUEL.mag, strafe: 1, strafeT: 0 };
+          this.hold = null; this.target = null;
+        }
+        break;
+      case 'duelEnd': if (this.duel && this.duel.id === m.id) { this.duel = null; this.pause = 2; setTimeout(() => this.send({ t: 'emote', e: m.winner === this.id ? 'cheer' : 'bow' }), 800); } break;
+      case 'shot': if (this.duel && m.duel === this.duel.id && m.by === this.duel.opp) this.dodgeCheck(m); break;
     }
+  }
+
+  // victim-side hit test for a shot fired at this NPC (same ballistics as the client)
+  dodgeCheck(m) {
+    const o = m.o, d = m.d;
+    for (let t = 0; t <= DUEL.shotLife; t += 0.005) {
+      const x = o[0] + d[0] * DUEL.shotSpeed * t, z = o[2] + d[2] * DUEL.shotSpeed * t;
+      const y = o[1] + d[1] * DUEL.shotSpeed * t - 0.5 * DUEL.shotGravity * t * t;
+      if (y < this.world.groundAt(x, z, y + 0.5) || this.world.blocked(x, z, y - 0.4, 0.06)) return;
+      if (Math.hypot(x - this.pos.x, z - this.pos.z) < DUEL.hitRadius && Math.abs(y - (this.pos.y + 1.0)) < 0.95) {
+        const id = this.duel.id;
+        setTimeout(() => { if (this.duel?.id === id) this.send({ t: 'dhit', duel: id, sid: m.sid }); }, t * 1000);
+        return;
+      }
+    }
+  }
+
+  duelStep(dt) {
+    const D = this.duel;
+    const opp = this.local.game.sessions.get(D.opp);
+    if (!opp) return;
+    const dx = opp.pos.x - this.pos.x, dz = opp.pos.z - this.pos.z, dist = Math.hypot(dx, dz) || 1;
+    this.ry = Math.atan2(dx, dz);
+    // strafe sideways, keep a fighting distance of ~8-14 m
+    D.strafeT -= dt;
+    if (D.strafeT <= 0) { D.strafe = Math.random() < 0.5 ? -1 : 1; D.strafeT = 0.8 + Math.random() * 1.6; }
+    const fx = dx / dist, fz = dz / dist;
+    const adv = dist > 14 ? 1 : dist < 8 ? -1 : 0;
+    const vx = (fz * D.strafe + fx * adv) * 2.6 * dt, vz = (-fx * D.strafe + fz * adv) * 2.6 * dt;
+    const nx = this.pos.x + vx, nz = this.pos.z + vz;
+    let anim = 'idle';
+    if (!this.world.blocked(nx, nz, this.pos.y) && this.world.canStep(nx, nz, this.pos.y)) { this.pos = { x: nx, y: this.world.groundAt(nx, nz, this.pos.y), z: nz }; anim = 'walk'; }
+    else D.strafe *= -1;
+    this.send({ t: 'pose', ...this.pos, ry: this.ry, anim });
+    // fire with human-like inaccuracy and reloads
+    const now = performance.now();
+    if (now < D.startAt || now < D.nextShot || dist > 45) return;
+    const ox = this.pos.x + Math.sin(this.ry) * 0.5, oy = this.pos.y + 1.35, oz = this.pos.z + Math.cos(this.ry) * 0.5;
+    const spread = 0.35 + dist * 0.045;
+    const tx = opp.pos.x + (Math.random() - 0.5) * spread, ty = opp.pos.y + 1.0 + (Math.random() - 0.5) * spread, tz = opp.pos.z + (Math.random() - 0.5) * spread;
+    const T = dist / DUEL.shotSpeed;
+    let ddx = tx - ox, ddy = ty - oy + 0.5 * DUEL.shotGravity * T * T, ddz = tz - oz;
+    const l = Math.hypot(ddx, ddy, ddz) || 1;
+    this.send({ t: 'shot', sid: 'n' + Math.random().toString(36).slice(2, 9), o: [ox, oy, oz], d: [ddx / l, ddy / l, ddz / l] });
+    D.ammo--;
+    D.nextShot = now + (D.ammo <= 0 ? DUEL.reload * 1000 + 400 : 650 + Math.random() * 900);
+    if (D.ammo <= 0) D.ammo = DUEL.mag;
   }
 
   step(dt) {
     const s = this.conn.session;
     if (!this.pos || !s) return;
+    if (this.duel) return this.duelStep(dt);
     if (this.hold && this.hold.b === this.id) {
       // follow the leader at their side
       const leader = this.local.game.sessions.get(this.hold.a);
@@ -81,7 +137,7 @@ class Bot {
     }
     // stop and face the player when they come close (so they can interact)
     const hu = this.local.human();
-    if (hu && hu.room?.id === this.region && Math.hypot(hu.pos.x - this.pos.x, hu.pos.z - this.pos.z) < 4.5) {
+    if (hu && !hu.duel && !hu.peerDuel && hu.room?.id === this.region && Math.hypot(hu.pos.x - this.pos.x, hu.pos.z - this.pos.z) < 4.5) {
       this.ry = Math.atan2(hu.pos.x - this.pos.x, hu.pos.z - this.pos.z);
       this.target = null;
       this.pause = Math.max(this.pause, 1.5);
@@ -93,7 +149,7 @@ class Bot {
       const human = this.local.human();
       for (let i = 0; i < 12; i++) {
         let x, z;
-        if (human && human.room?.id === this.region && Math.random() < 0.25) { x = human.pos.x + (Math.random() - 0.5) * 8; z = human.pos.z + (Math.random() - 0.5) * 8; }
+        if (human && !human.duel && !human.peerDuel && human.room?.id === this.region && Math.random() < 0.25) { x = human.pos.x + (Math.random() - 0.5) * 8; z = human.pos.z + (Math.random() - 0.5) * 8; }
         else if (b.circle) { const a = Math.random() * 6.28, r = Math.random() * (b.r - 3); x = b.x + Math.cos(a) * r; z = b.z + Math.sin(a) * r; }
         else { x = b.minX + 3 + Math.random() * (b.maxX - b.minX - 6); z = b.minZ + 3 + Math.random() * (b.maxZ - b.minZ - 6); }
         if (!this.world.blocked(x, z, this.pos.y)) { this.target = { x, z }; break; }
@@ -116,7 +172,11 @@ class Bot {
     const near = human && human.room?.id === this.region && Math.hypot(human.pos.x - this.pos.x, human.pos.z - this.pos.z);
     if (r < 0.35) this.send({ t: 'chat', ch: Math.random() < 0.5 ? 'region' : 'nearby', text: pick(LINES), cid: 0 });
     else if (r < 0.6 && !this.hold) this.send({ t: 'emote', e: pick(['wave', 'heart', 'dance', 'cheer', 'bow']) });
-    else if (r < 0.85 && near && near < 14 && !this.hold) {
+    else if (r < 0.75 && near && near < 25 && !this.hold && !this.duel && !human.duel && !human.peerDuel) {
+      // NPCs sometimes challenge the player to a snowball-gun duel
+      this.send({ t: 'req', kind: 'duel', to: human.user.id });
+    }
+    else if (false) {
       // snowball at the player
       const h = human.pos, dx = h.x - this.pos.x, dz = h.z - this.pos.z, d = Math.hypot(dx, dz);
       const t = Math.max(d / 14, 0.2);

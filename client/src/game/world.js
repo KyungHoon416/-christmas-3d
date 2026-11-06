@@ -139,6 +139,7 @@ export class World {
 
   pick(x, y) {
     if (this.photoMode) return;
+    if (this.aim && this.hooks.onFire) return this.hooks.onFire();
     const ndc = new THREE.Vector2((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
     const roots = [...this.remotes.values()].map((r) => r.char.root);
@@ -215,6 +216,8 @@ export class World {
     this.engine.updaters.push(upd);
   }
 
+  splashAt(id) { this.hitEffect(id); }
+
   hitEffect(targetId) {
     const p = targetId === this.self.id ? this.me.pos : this.remotes.get(targetId)?.pos;
     if (p) this.splash(p.clone().add(new THREE.Vector3(0, 1.2, 0)));
@@ -283,7 +286,8 @@ export class World {
       // the leader of a hand-hold walks a bit slower
       const hs = Math.hypot(me.vel.x, me.vel.z);
       me.speed = hs;
-      if (hs > 0.3) me.ry = lerpAngle(me.ry, Math.atan2(me.vel.x, me.vel.z), 1 - Math.exp(-10 * dt));
+      if (this.aim) me.ry = lerpAngle(me.ry, this.cam.yaw + Math.PI, 1 - Math.exp(-20 * dt)); // face the crosshair, strafe
+      else if (hs > 0.3) me.ry = lerpAngle(me.ry, Math.atan2(me.vel.x, me.vel.z), 1 - Math.exp(-10 * dt));
       if (wantMove && now < this.emoteUntil) this.emoteUntil = 0;
       if (now < this.emoteUntil) { /* keep emote */ }
       else me.anim = !me.grounded ? 'jump' : hs > 0.2 ? (ice ? 'skate' : hs > 4.2 ? 'run' : 'walk') : 'idle';
@@ -360,8 +364,14 @@ export class World {
     target.lerp(tmpV.set(me.pos.x, me.pos.y + 1.45, me.pos.z), 1 - Math.exp(-14 * dt));
     const yaw = this.cam.yaw, pitch = this.cam.pitch;
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+    // over-the-shoulder framing while aiming the snow gun
+    const shoulder = this.aim ? 0.6 : 0;
+    this.shoulderK = (this.shoulderK || 0) + ((this.aim ? 1 : 0) - (this.shoulderK || 0)) * (1 - Math.exp(-8 * dt));
+    target.x += Math.cos(yaw) * shoulder * this.shoulderK;
+    target.z += -Math.sin(yaw) * shoulder * this.shoulderK;
+    target.y += 0.15 * this.shoulderK;
     // pull the camera in front of walls (2D march against large colliders)
-    let maxD = this.cam.dist;
+    let maxD = this.aim ? Math.min(this.cam.dist, 3.3) : this.cam.dist;
     for (let d = 0.6; d <= this.cam.dist; d += 0.35) {
       const px = target.x + dir.x * d, pz = target.z + dir.z * d, py = target.y + dir.y * d;
       if (this.camColl.blocked(px, pz, py - 1.0, 0.3)) { maxD = Math.max(1.2, d - 0.4); break; }
@@ -374,6 +384,10 @@ export class World {
     if (pos.y < groundY) pos.y = groundY;
     this.camera.position.copy(pos);
     this.camera.lookAt(target);
+    // undo the shoulder offset so the follow target stays on the player
+    target.x -= Math.cos(yaw) * shoulder * this.shoulderK;
+    target.z -= -Math.sin(yaw) * shoulder * this.shoulderK;
+    target.y -= 0.15 * this.shoulderK;
   }
 
   cameraForwardYaw() { return this.cam.yaw + Math.PI; }

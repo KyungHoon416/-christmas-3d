@@ -20,4 +20,6 @@ const page = `<title>Christmas World Seoul</title>
 <script type="module" src="${js}"></script>
 `;
 fs.writeFileSync('dist-demo/artifact.html', page);
+// standalone copy for local testing (the artifact host adds this skeleton itself)
+fs.writeFileSync('dist-demo/artifact-test.html', `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0">${page}</body></html>`);
 console.log('wrote dist-demo/artifact.html', { js, css });
