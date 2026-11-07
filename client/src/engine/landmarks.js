@@ -332,6 +332,52 @@ export function buildCheonggyecheon(group, batch, r, updaters) {
     }
     bulbs.instanceColor.needsUpdate = true;
   });
+  // side walls along the stairs and the east ramps (no gaps into the void)
+  for (const sz of [-1, 1]) {
+    for (const [x0, x1] of [[-82, -70], [70, 82]]) {
+      batch.add(mats.stoneWall(), tiledBox(x1 - x0, -LOW, 0.8, 3), matrix((x0 + x1) / 2, LOW / 2, sz * 8.4));
+      batch.add(mats.snowCap(), new THREE.BoxGeometry(x1 - x0, 0.12, 0.9), matrix((x0 + x1) / 2, 0.06, sz * 8.4));
+    }
+  }
+  // stair handrails
+  for (const sz of [-1, 1]) {
+    const pts = [new THREE.Vector3(-82, 1.0, sz * 7.7), new THREE.Vector3(-70, LOW + 1.0, sz * 7.7)];
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 8, 0.05, 6), mats.metal()));
+  }
+  // lower walkway: benches, planters with small lit trees, warm wall niches
+  for (const bn of r.benches || []) {
+    const p = matrix(bn.x, LOW, bn.z, 0, bn.ry);
+    batch.add(mats.wood(), new THREE.BoxGeometry(1.8, 0.08, 0.5), matrix(0, 0.45, 0), p);
+    batch.add(mats.wood(), new THREE.BoxGeometry(1.8, 0.45, 0.06), matrix(0, 0.72, -0.24), p);
+    batch.add(mats.snowCap(), new THREE.BoxGeometry(1.75, 0.05, 0.45), matrix(0, 0.51, 0), p);
+    for (const sx of [-0.8, 0.8]) batch.add(mats.metal(), new THREE.BoxGeometry(0.06, 0.45, 0.45), matrix(sx, 0.22, 0), p);
+  }
+  for (const pl of r.planters || []) {
+    batch.add(mats.darkStone(), new THREE.CylinderGeometry(0.55, 0.48, 0.6, 12), matrix(pl.x, LOW + 0.3, pl.z));
+    batch.add(mats.treeGreen(), new THREE.ConeGeometry(0.6, 1.9, 10), matrix(pl.x, LOW + 1.5, pl.z));
+    batch.add(mats.snowCap(), new THREE.ConeGeometry(0.42, 0.8, 10, 1, true), matrix(pl.x, LOW + 2.05, pl.z));
+  }
+  const nicheCount = 46;
+  const niches = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.7, 0.45), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc98a).multiplyScalar(1.3), toneMapped: false }), nicheCount * 2);
+  let ni = 0;
+  for (let k = 0; k < nicheCount; k++) {
+    const x = -66 + k * 3;
+    niches.setMatrixAt(ni++, matrix(x, LOW + 1.3, -7.97, 0, 0));
+    niches.setMatrixAt(ni++, matrix(x, LOW + 1.3, 7.97, 0, Math.PI));
+  }
+  group.add(niches);
+  // twinkling string lights along both street railings (seen from below too)
+  for (const sz of [-1, 1]) for (const [a, b] of [[-70, -25], [-15, 29.5], [38.5, 70]]) {
+    const n = Math.round((b - a) * 1.2);
+    const m = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 5, 4), new THREE.MeshBasicMaterial({ toneMapped: false }), n);
+    const c = new THREE.Color();
+    for (let i = 0; i < n; i++) {
+      const x = a + ((b - a) * i) / (n - 1);
+      m.setMatrixAt(i, matrix(x, 1.12 - Math.abs(Math.sin(i * 0.9)) * 0.12, sz * 8.2));
+      m.setColorAt(i, c.setHex([0xffe2a6, 0xff8fcf, 0x9fdcff][i % 3]).multiplyScalar(2));
+    }
+    group.add(m);
+  }
   // floating lantern sculptures on the water
   const lanternCols = [0xffb36b, 0xff6f91, 0x8fd3ff, 0xffe28a];
   for (let i = 0; i < 9; i++) {

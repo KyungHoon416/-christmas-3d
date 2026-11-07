@@ -208,9 +208,25 @@ function cheonggyecheon() {
   // Retaining walls on east ramps (between the ramp and water) and channel ends
   colliders.push({ t: 'box', x: 76, z: 0, hw: 6, hd: 2.4, y0: LOW - 1, y1: 1 });
   colliders.push({ t: 'circle', x: -84, z: -12, r: 2.2 }); // "Spring" sculpture
-  const lamps = [...lampsAlong('x', -10, -66, 66, 11), ...lampsAlong('x', 10, -66, 66, 11), ...lampsAlong('x', -20, -88, 88, 16), ...lampsAlong('x', 20, -88, 88, 16)];
+  // lower walkway: lamps, benches and planters along the stream (away from bridges)
+  const nearBridge = (x) => bridges.some((b) => Math.abs(x - b.x) < b.hw + 2.5);
+  const lowerLamps = [];
+  for (let x = -64; x <= 66; x += 13) if (!nearBridge(x)) for (const z of [-6.9, 6.9]) lowerLamps.push({ x, z, y: LOW });
+  const benches = [], planters = [];
+  for (let x = -57.5; x <= 64; x += 13) {
+    if (nearBridge(x)) continue;
+    for (const side of [-1, 1]) {
+      if ((Math.round(x) + side * 3) % 2 === 0) benches.push({ x, z: side * 7.55, ry: side > 0 ? Math.PI : 0 });
+      else planters.push({ x, z: side * 7.4 });
+    }
+  }
+  for (const b of benches) colliders.push({ t: 'box', x: b.x, z: b.z, hw: 0.95, hd: 0.32, y0: LOW - 1, y1: LOW + 1.2 });
+  for (const p of planters) colliders.push({ t: 'circle', x: p.x, z: p.z, r: 0.55, y0: LOW - 1, y1: LOW + 2.5 });
+  const lamps = [...lampsAlong('x', -10, -66, 66, 11), ...lampsAlong('x', 10, -66, 66, 11), ...lampsAlong('x', -20, -88, 88, 16), ...lampsAlong('x', 20, -88, 88, 16), ...lowerLamps];
   return {
-    id: 'cheonggyecheon', name: '청계천', en: 'Cheonggyecheon Stream', scale: 3.0,
+    id: 'cheonggyecheon', benches, planters,
+    // camera-only: keep the third-person camera out of bridge decks when walking underneath
+    cameraColliders: bridges.map((b) => ({ t: 'box', x: b.x, z: 0, hw: b.hw + 0.4, hd: 9, y0: -0.75, y1: 0.25 })), name: '청계천', en: 'Cheonggyecheon Stream', scale: 3.0,
     desc: '물길을 따라 이어지는 빛의 산책로',
     highlights: ['빛 터널', '징검다리', '커플 산책길'],
     bounds: { minX: -92, maxX: 92, minZ: -24, maxZ: 24 },

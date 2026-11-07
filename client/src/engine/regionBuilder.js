@@ -61,6 +61,14 @@ export function buildRegion(r, quality) {
     const puv = path.geometry.attributes.uv;
     for (let i = 0; i < puv.count; i++) puv.setXY(i, puv.getX(i) * 10, puv.getY(i) * 10);
     group.add(path);
+  } else if (r.id === 'cheonggyecheon') {
+    // snow ground with an opening over the sunken stream (x -82..82, z -8.4..8.4),
+    // otherwise the ground plane hides the stairs and the lower walkway
+    const HX = 82, HZ = 8.4, E = 300;
+    groundPlane(group, mats.snow(), 0, -HZ - E / 2, 2 * (HX + E), E, -0.02, 10);
+    groundPlane(group, mats.snow(), 0, HZ + E / 2, 2 * (HX + E), E, -0.02, 10);
+    groundPlane(group, mats.snow(), -HX - E / 2, 0, E, 2 * HZ, -0.02, 10);
+    groundPlane(group, mats.snow(), HX + E / 2, 0, E, 2 * HZ, -0.02, 10);
   } else {
     const W = b.maxX - b.minX + 400, D = b.maxZ - b.minZ + 400;
     groundPlane(group, mats.snow(), (b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2, W, D, -0.02, 10);
@@ -83,7 +91,7 @@ export function buildRegion(r, quality) {
     groundPlane(group, mats.paving(), 0, 0, 140, 125, 0.01, 7);
   } else if (r.id === 'cheonggyecheon') {
     for (const sz of [-1, 1]) groundPlane(group, mats.paving(), 0, sz * 10, 184, 4, 0.011, 5);
-    groundPlane(group, mats.paving(), -86, 0, 12, 22, 0.012, 5);
+    groundPlane(group, mats.paving(), -87, 0, 10, 22, 0.012, 5);
   }
 
   // ---- buildings

@@ -43,7 +43,7 @@ export class World {
     this.engine.loadRegion(region);
     this.coll = new CollisionWorld(region.colliders, region.surfaces, region.bounds);
     const big = region.colliders.filter((c) => (c.t === 'box' && Math.min(c.hw, c.hd) > 0.8) || (c.t === 'circle' && c.r > 1.5) || c.t === 'ellipse');
-    this.camColl = new CollisionWorld(big, [], null);
+    this.camColl = new CollisionWorld([...big, ...(region.cameraColliders || [])], [], null);
     if (!this.me) {
       this.me = { char: new Character(this.self.appearance, { seed: hashSeed(this.self.id) }), pos: new THREE.Vector3(), vel: new THREE.Vector3(), vy: 0, ry: 0, grounded: true, anim: 'idle' };
     }
