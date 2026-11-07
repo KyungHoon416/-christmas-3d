@@ -36,7 +36,7 @@ export class DDPInteraction {
   breadcrumb() {
     const r = this.region;
     const parts = ['대한민국', '서울', r ? r.name : '-'];
-    if (this.active() && this.zone) parts.push(this.zoneName() + (this.app.world.me?.pos.y > 3 ? ' (2F)' : ''));
+    if (this.active() && this.zone) parts.push(this.zoneName() + (this.zone === 'lobby' && this.app.world.me?.pos.y > 3 ? ' (2F 갤러리)' : ''));
     return parts;
   }
 
