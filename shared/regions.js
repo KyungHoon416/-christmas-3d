@@ -371,8 +371,17 @@ function ddp() {
       { x: DDP.x - 15, z: DDP.z + 3, ry: 0.3 }, { x: DDP.x + 14, z: DDP.z + 7, ry: -0.2 },
     ],
   };
+  // signposts around the building pointing to the south entrance
+  const signs = [0, Math.PI, -Math.PI / 2, -Math.PI / 4, -3 * Math.PI / 4, Math.PI / 5, (4 * Math.PI) / 5].map((a) => {
+    const [px, pz] = ddpRim(a, 1.13);
+    // walking direction around the building toward the door (shortest way)
+    const toDoor = Math.sign(Math.sin(Math.PI / 2 - a)) || 1;
+    return { x: px, z: pz, a, dir: (Math.cos(a) >= 0 ? 1 : -1) * (pz > DDP.z ? 1 : -1) * toDoor };
+  });
+  interior.signs = signs;
   const colliders = [
     ...ddpWalls(),
+    ...signs.map((s) => ({ t: 'circle', x: s.x, z: s.z, r: 0.35 })),
     { t: 'circle', x: interior.sculpture.x, z: interior.sculpture.z, r: interior.sculpture.r },
     { t: 'circle', x: interior.lightTree.x, z: interior.lightTree.z, r: interior.lightTree.r },
     ...interior.booths.map((b) => ({ t: 'box', x: b.x, z: b.z, hw: 2.1, hd: 1.5, rot: b.ry })),

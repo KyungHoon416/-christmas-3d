@@ -505,7 +505,8 @@ export function buildDDP(group, r, updaters, quality) {
   group.add(media);
   updaters.push((dt, t) => { mediaMat.uniforms.uTime.value = t; });
 
-  buildDDPEntrance(group, x, doorZ);
+  buildDDPEntrance(group, x, doorZ, updaters);
+  buildDDPSigns(group, r);
   buildDDPInterior(group, r, updaters, quality, mediaMat);
 
   // LED rose garden
@@ -762,7 +763,31 @@ function textPanel(lines, { w = 512, h = 256, bg = '#141a33', fg = '#ffffff', ac
   return t;
 }
 
-function buildDDPEntrance(group, x, doorZ) {
+function buildDDPSigns(group, r) {
+  for (const sg of r.interior.signs || []) {
+    const g = new THREE.Group();
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 2.6, 8), mats.metal()); post.position.y = 1.3; g.add(post);
+    const tex = textPanel([['🚪 DDP 디자인 마켓 입구', 46, '#ffffff'], ['남쪽 정면 · LED 장미정원 쪽', 34, '#ffd1e6']], { w: 768, h: 220 });
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.75), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, side: THREE.DoubleSide }));
+    board.position.y = 2.45; g.add(board);
+    g.position.set(sg.x, 0, sg.z);
+    // face outward (away from the building centre)
+    g.rotation.y = Math.atan2(sg.x - DDP.x, sg.z - DDP.z);
+    group.add(g);
+  }
+}
+
+function buildDDPEntrance(group, x, doorZ, updaters) {
+  // light beam + floating "입구" marker, visible from anywhere around the building
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.2, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xff7ac8, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false }));
+  beam.position.set(x, 30, doorZ + 3);
+  group.add(beam);
+  const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: textPanel([['입구 ENTRANCE', 64, '#ffffff'], ['DDP 크리스마스 디자인 마켓', 34, '#ffd1e6']], { w: 768, h: 260, bg: '#e4407f', accent: '#ffffff' }), depthTest: false, toneMapped: false }));
+  marker.scale.set(12, 4.1, 1);
+  marker.position.set(x, 27, doorZ + 3);
+  marker.renderOrder = 5;
+  group.add(marker);
+  updaters.push((dt, t) => { marker.position.y = 27 + Math.sin(t * 1.4) * 0.6; beam.material.opacity = 0.14 + Math.sin(t * 2) * 0.05; });
   const W = DDP.doorHalf * 2, Hh = DDP.doorH;
   // glowing portal frame
   const pts = [new THREE.Vector3(-W / 2, 0, 0), new THREE.Vector3(-W / 2, Hh, 0), new THREE.Vector3(W / 2, Hh, 0), new THREE.Vector3(W / 2, 0, 0)];
