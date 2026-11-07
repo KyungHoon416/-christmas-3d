@@ -1,5 +1,7 @@
 // Assemble one region's 3D world from shared/regions.js data.
 import * as THREE from 'three';
+import { adLocationsFor } from '../../../shared/ads.js';
+import { AdBanner3D } from '../ads/adBanner3D.js';
 import { mulberry32 } from '../../../shared/regions.js';
 import { Batch, matrix, tiledPlane } from './batch.js';
 import { mats } from './materials.js';
@@ -160,9 +162,13 @@ export function buildRegion(r, quality) {
     updaters.push((dt, t) => { av.visible = Math.sin(t * 2.4) > -0.2; });
   }
 
+  // 3D ad banners (shared/ads.js locations; content applied later by the app)
+  const adBanners = adLocationsFor(r.id).map((loc) => { const b = new AdBanner3D(loc, { quality }); group.add(b.group); return b; });
+
   batch.build(group);
   return {
     group,
+    adBanners,
     updaters,
     lamps: lampInfo.positions,
     dispose() {

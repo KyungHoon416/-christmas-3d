@@ -397,3 +397,17 @@ body.mobile .ddp-prompt kbd::after { content: '👆'; font-size: 16px; }
 body.mobile .ddp-prompt.over-modal { bottom: calc(24px + var(--safe-b, 0px)); }
 .ddp-closehint { margin-top: 12px; opacity: 0.8; }
 .ddp-closehint kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 6px; background: #ff5fa2; color: #fff; font: 800 12px sans-serif; margin-right: 4px; }
+
+/* ---- 3D ad banner panel */
+.ad-disclosure { background: rgba(255,111,174,0.12); border: 1px solid rgba(255,111,174,0.35); border-radius: 10px; padding: 8px 12px; }
+.ad-cards { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-top: 10px; }
+.ad-card { display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; }
+.ad-card.main { grid-row: span 2; }
+.ad-thumb img, .ad-thumb canvas { width: 100%; height: auto; display: block; border-radius: 8px; }
+.ad-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ad-host { font-size: 11px; opacity: 0.7; }
+.ad-card .btn.sm { padding: 6px 12px; font-size: 13px; align-self: flex-start; }
+.ad-closehint { margin-top: 12px; opacity: 0.8; }
+.ad-closehint kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 6px; background: #ff5fa2; color: #fff; font: 800 12px sans-serif; margin-right: 4px; }
+@media (max-width: 640px) { .ad-cards { grid-template-columns: 1fr; } .ad-card.main { grid-row: auto; } }
+body.mobile .ad-closehint, body.mobile .ddp-closehint { margin-bottom: 72px; }

@@ -15,12 +15,24 @@
           ".read": "auth != null",
           "$uid": {
             ".write": "auth != null && auth.uid === $uid",
-            "x": { ".validate": "newData.isNumber()" },
-            "y": { ".validate": "newData.isNumber()" },
-            "z": { ".validate": "newData.isNumber()" },
-            "ry": { ".validate": "newData.isNumber()" },
-            "a": { ".validate": "newData.isString() && newData.val().length <= 12" },
-            "$other": { ".validate": false }
+            "x": {
+              ".validate": "newData.isNumber()"
+            },
+            "y": {
+              ".validate": "newData.isNumber()"
+            },
+            "z": {
+              ".validate": "newData.isNumber()"
+            },
+            "ry": {
+              ".validate": "newData.isNumber()"
+            },
+            "a": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         },
         "rtc": {
@@ -31,6 +43,98 @@
               ".write": "auth != null && ((!data.exists() && newData.child('from').val() === auth.uid) || (!newData.exists() && auth.uid === $to))",
               ".validate": "newData.val() === null || (newData.child('data').isString() && newData.child('data').val().length < 16000)"
             }
+          }
+        }
+      }
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "ads": {
+      ".read": true,
+      "slots": {
+        "$slotId": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          ".validate": "$slotId.matches(/^[a-z0-9-]{1,40}$/) && (!newData.exists() || newData.hasChildren(['slotName','isActive']))",
+          "slotId": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "locationId": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "slotName": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "advertiserName": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "imageUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 1000"
+          },
+          "targetUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 1000 && (newData.val() === '' || newData.val().beginsWith('https://') || newData.val().beginsWith('http://'))"
+          },
+          "description": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "isActive": {
+            ".validate": "newData.isBoolean()"
+          },
+          "priority": {
+            ".validate": "newData.isNumber()"
+          },
+          "startDate": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "endDate": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() || newData.isString()"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() || newData.isString()"
+          },
+          "updatedBy": {
+            ".validate": "newData.isString() && newData.val().length <= 128"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "locations": {
+        "$locationId": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          ".validate": "newData.hasChildren(['isActive'])",
+          "isActive": {
+            ".validate": "newData.isBoolean()"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "images": {
+        "$slotId": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 450000"
+        }
+      }
+    },
+    "adStats": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$slotId": {
+        "$event": {
+          "$day": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "$slotId.matches(/^[a-z0-9-]{1,40}$/) && $event.matches(/^ad_[a-z_]{1,30}$/) && $day.matches(/^[0-9]{8}$/) && newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"
           }
         }
       }

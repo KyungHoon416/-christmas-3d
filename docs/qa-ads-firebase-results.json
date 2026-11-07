@@ -1,0 +1,122 @@
+[
+  {
+    "id": "AD-R1",
+    "name": "광고 데이터 공개 읽기 (로그인 없이)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R2",
+    "name": "일반 사용자는 광고 슬롯 수정 불가",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R3",
+    "name": "통계 +1 기록 허용",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R4",
+    "name": "통계 임의 값 조작 거부 (+5)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R5",
+    "name": "일반 사용자는 통계 읽기 불가",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R6",
+    "name": "관리자 목록 자기 등록 불가",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R7",
+    "name": "관리자는 슬롯 저장 가능",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-R8",
+    "name": "관리자도 javascript: 링크 저장 불가",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-01",
+    "name": "광화문 광고판 1개 + TEST SLOT A/B/C 표시 (DB 비어 있으면 기본값)",
+    "ok": true,
+    "detail": "[\"TEST SLOT A\",\"TEST SLOT B\",\"TEST SLOT C\"]"
+  },
+  {
+    "id": "AD-04",
+    "name": "Firebase DB 변경 → 슬롯 B 이미지/이름 실시간 반영",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-06",
+    "name": "종료일 지난 슬롯 → 기본 크리스마스 배너로 전환",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-06b",
+    "name": "비활성 슬롯 → 기본 배너",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-09",
+    "name": "통계 기록 (view/visible/interaction/click/link_open)",
+    "ok": true,
+    "detail": "{\"ad_banner_view\":{\"20261107\":1},\"ad_external_link_open\":{\"20261107\":1},\"ad_slot_click\":{\"20261107\":1},\"ad_slot_interaction\":{\"20261107\":1},\"ad_slot_visible\":{\"20261107\":1}}"
+  },
+  {
+    "id": "AD-08",
+    "name": "확인 후에만 링크 열림",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-A1",
+    "name": "관리자 아님 → 편집 불가 + UID 등록 안내",
+    "ok": true,
+    "detail": "NbGn1RNsVtJWvCvK12rLOibQgS4f"
+  },
+  {
+    "id": "AD-A2",
+    "name": "관리자 화면에서 수정 + 이미지 업로드 → 게임에 반영",
+    "ok": true,
+    "detail": "test-slot-a 저장 완료 — 게임에 바로 반영됩니다"
+  },
+  {
+    "id": "AD-05",
+    "name": "Firebase Storage 업로드",
+    "ok": false,
+    "detail": "BLOCKED: 프로젝트에 Storage 버킷 없음 → DB 압축 저장 폴백으로 대체됨"
+  },
+  {
+    "id": "AD-A3",
+    "name": "관리자 비활성화 → 게임 반영",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-A4",
+    "name": "기본 테스트 배너로 복원",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "AD-ERR",
+    "name": "페이지 오류 없음",
+    "ok": true,
+    "detail": ""
+  }
+]

@@ -17,6 +17,8 @@ import { Voice } from '../net/voice.js';
 import { CarolPlayer } from '../audio/carol.js';
 import { DuelController } from '../game/duel.js';
 import { DDPInteraction } from '../game/ddpInteract.js';
+import { AdService } from '../ads/adService.js';
+import { AdController } from '../ads/adInteract.js';
 import { Chat } from './chat.js';
 import { Minimap, drawRegion } from './minimap.js';
 import { el, $, $$, esc, avatar, toast, modal, confirmDialog } from './dom.js';
@@ -68,6 +70,8 @@ export class App {
     this.carol = new CarolPlayer();
     this.duel = new DuelController(this);
     this.ddp = new DDPInteraction(this);
+    this.adService = new AdService({ firebase: FIREBASE });
+    this.ads = new AdController(this, this.adService);
     this.carol.onSong = (t) => { if (this.carolTitle) this.carolTitle.textContent = t; };
     this.bindNet();
     this.showLogin();
@@ -427,7 +431,7 @@ export class App {
       if (e.code === 'Space' && this.duel.inDuel) { this.input.jumpQueued = false; this.duel.fire(); return; }
       if (e.code === 'KeyF') { if (!this.duel.fire()) this.requestDuel(); }
       else if (e.code === 'KeyR') this.duel.reload();
-      else if (e.code === 'KeyE') { if (!e.repeat) this.ddp.act(); }
+      else if (e.code === 'KeyE') { if (!e.repeat && !this.ads.act()) this.ddp.act(); }
       else if (e.code === 'KeyM') this.openMenu('map');
       else if (e.code === 'KeyV') this.toggleMic();
       else if (e.code === 'Digit1') this.emote('wave');
@@ -476,6 +480,7 @@ export class App {
     if (this.duel.inDuel && (this.fireHeld || this.input.keys.has('Space'))) { this.input.jumpQueued = false; this.duel.fire(); }
     this.duel.update(dt);
     this.ddp.update(dt);
+    this.ads.update(dt);
     if (this.mctl) {
       const d = this.duel.inDuel;
       if (d !== this._mDuel) {

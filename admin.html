@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>광고 관리 · Christmas World Seoul</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: light; --bg: #f5f4f9; --card: #fff; --line: #e3e0ea; --ink: #1f1b2b; --muted: #6b6680; --pink: #e4407f; --ok: #1f8a4c; --warn: #b26a00; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Noto Sans KR", system-ui, sans-serif; }
+    header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #1d1934; color: #fff; flex-wrap: wrap; }
+    header h1 { font-size: 17px; margin: 0; flex: 1; }
+    header .who { font-size: 12px; opacity: 0.85; }
+    main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 60px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    .card h2 { font-size: 15px; margin: 0 0 10px; }
+    .note { color: var(--muted); font-size: 12px; }
+    .btn { border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 7px 12px; font: inherit; cursor: pointer; }
+    .btn.primary { background: var(--pink); border-color: var(--pink); color: #fff; }
+    .btn.danger { color: #b3123a; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
+    th { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .thumb { width: 120px; aspect-ratio: 16/10; object-fit: cover; border-radius: 6px; background: #ddd; display: block; }
+    .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 11px; background: #eee; }
+    .tag.ACTIVE { background: #dff5e7; color: var(--ok); } .tag.SCHEDULED { background: #fff1d6; color: var(--warn); }
+    .tag.EXPIRED, .tag.INACTIVE { background: #f1e8ec; color: #8a2a4a; }
+    form.slot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+    form.slot label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+    form.slot input, form.slot textarea { font: inherit; color: var(--ink); padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; }
+    form.slot .full { grid-column: 1 / -1; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .msg { padding: 8px 12px; border-radius: 9px; background: #eef4ff; margin: 8px 0; font-size: 13px; }
+    .msg.err { background: #fde9ee; color: #8a1230; }
+    canvas.preview { width: 100%; max-width: 760px; border-radius: 12px; background: #20203a; display: block; }
+    code { background: #f0eef6; padding: 1px 5px; border-radius: 5px; }
+    @media (max-width: 720px) { form.slot { grid-template-columns: 1fr; } .hide-m { display: none; } }
+  </style>
+</head>
+<body>
+  <header><h1>🎄 CHRISTMAS WORLD SEOUL · 광고 관리</h1><span class="who" id="who">로그인 필요</span><span id="authbtns"></span></header>
+  <main id="root"><div class="card">불러오는 중…</div></main>
+  <script type="module" src="/client/src/admin/admin.js"></script>
+</body>
+</html>

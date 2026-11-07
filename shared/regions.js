@@ -11,6 +11,8 @@
 
 import { DDP, ddpRim as ddpRimFn, insideDDP as insideDDPfn, buildDDPLayout, L as DDPL, ZONES as DDP_ZONES, ddpZoneOf, ddpCeiling, ddpVoiceFactor } from './ddp.js';
 
+import { adColliders } from './ads.js';
+
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -412,7 +414,7 @@ function namsan() {
 
 // Building footprints become colliders automatically.
 function finalize(r) {
-  const colliders = [...r.colliders];
+  const colliders = [...r.colliders, ...adColliders(r.id)];
   for (const b of r.buildings) colliders.push({ t: 'box', x: b.x, z: b.z, hw: b.w / 2, hd: b.d / 2, rot: b.rot || 0 });
   for (const l of r.lamps) colliders.push({ t: 'circle', x: l.x, z: l.z, r: 0.18, y0: (l.y ?? 0) - 1, y1: (l.y ?? 0) + 5 });
   for (const t of r.decoTrees) colliders.push({ t: 'circle', x: t.x, z: t.z, r: 0.6 });
