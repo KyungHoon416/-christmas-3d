@@ -68,6 +68,8 @@ export class DDPInteraction {
   findTarget() {
     const w = this.app.world, me = w.me, D = this.region.ddp;
     let best = null;
+    // a panel is open: the same E key / button closes it (never opens a second one)
+    if (this.panel) { this.showPrompt(this.panel.kind === 'art' ? '작품 닫기' : '상품 닫기', { kind: 'close' }); return; }
     if (w.seated) { this.showPrompt('일어나기 (이동 키로도 일어나요)', { kind: 'stand' }); return; }
     if (this.app.duel.inDuel) return this.hidePrompt();
     const p = me.pos;
@@ -114,6 +116,7 @@ export class DDPInteraction {
 
   // ------------------------------------------------------------ actions
   act() {
+    if (this.panel) { this.panel.close(); return true; }
     const t = this.target;
     if (!t) return false;
     if (t.kind === 'stand') { this.app.world.seated = null; this.app.net.send({ t: 'seat', sit: false }); return true; }
@@ -139,22 +142,42 @@ export class DDPInteraction {
     this.app.net.send({ t: 'warp', zone });
   }
 
+  // only one panel at a time; closing it (X, Esc, background, E) clears the slot
+  track(m, kind) {
+    this.panel = m;
+    m.kind = kind;
+    this.prompt.classList.add('over-modal');
+    const foot = el('<p class="note ddp-closehint"><kbd>E</kbd> 키 또는 아래 버튼으로 닫기</p>');
+    $('.modal-body', m)?.appendChild(foot);
+    this.findTarget();
+  }
+  untrack(m) {
+    if (this.panel !== m) return;
+    this.panel = null;
+    this.prompt.classList.remove('over-modal');
+    if (this.active() && this.app.world.me) this.findTarget(); else this.hidePrompt();
+  }
+
   openArtwork(a) {
+    if (this.panel) return;
     const i = this.region.ddp.artworks.indexOf(a);
     const img = artworkTexture(i, a.title).image.toDataURL('image/jpeg', 0.85);
-    modal(esc(a.title), `<div class="ddp-art"><img src="${img}" alt="${esc(a.title)}"/>
+    const m = modal(esc(a.title), `<div class="ddp-art"><img src="${img}" alt="${esc(a.title)}"/>
       <div><span class="tag pink">테스트용 콘텐츠</span>
       <p class="note" style="margin-top:10px">${esc(a.desc)}</p>
       <p class="note">이 작품과 설명은 기능 확인을 위한 <b>임시 콘텐츠</b>입니다. 실제 DDP 전시 작품이 아니며, 실제 전시 정보는 운영 데이터로 교체될 예정입니다.</p>
-      <p class="note">위치: DDP · 전시 공간 (1F)</p></div></div>`, { wide: true });
+      <p class="note">위치: DDP · 전시 공간 (1F)</p></div></div>`, { wide: true, onClose: () => this.untrack(m) });
+    this.track(m, 'art');
   }
 
   openProduct(p) {
+    if (this.panel) return;
     const m = modal(esc(p.name), `<div class="ddp-art"><canvas class="ddp-prod" data-pv></canvas>
       <div><span class="tag">전시 소품 · 판매 기능 없음</span>
       <p class="note" style="margin-top:10px">${esc(p.desc)}</p>
       <p class="note">가격·결제·구매 기능은 제공하지 않습니다. 드래그해서 돌려 볼 수 있어요.</p>
-      <p class="note">위치: DDP · 디자인 스토어 (1F)</p></div></div>`, { wide: true, onClose: () => stop() });
+      <p class="note">위치: DDP · 디자인 스토어 (1F)</p></div></div>`, { wide: true, onClose: () => { stop(); this.untrack(m); } });
+    this.track(m, 'product');
     const c = $('[data-pv]', m);
     const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true });
     r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));

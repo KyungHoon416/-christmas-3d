@@ -393,3 +393,7 @@ body.mobile .ddp-prompt kbd::after { content: '👆'; font-size: 16px; }
 .floor-toggle { float: right; display: inline-flex; gap: 6px; }
 .floor-toggle .btn { padding: 2px 12px; min-height: 0; font-size: 12px; }
 .crumbline { margin: 4px 0 8px; }
+.ddp-prompt.over-modal { z-index: 45; bottom: 10px; }
+body.mobile .ddp-prompt.over-modal { bottom: calc(24px + var(--safe-b, 0px)); }
+.ddp-closehint { margin-top: 12px; opacity: 0.8; }
+.ddp-closehint kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 6px; background: #ff5fa2; color: #fff; font: 800 12px sans-serif; margin-right: 4px; }

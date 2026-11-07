@@ -427,7 +427,7 @@ export class App {
       if (e.code === 'Space' && this.duel.inDuel) { this.input.jumpQueued = false; this.duel.fire(); return; }
       if (e.code === 'KeyF') { if (!this.duel.fire()) this.requestDuel(); }
       else if (e.code === 'KeyR') this.duel.reload();
-      else if (e.code === 'KeyE') this.ddp.act();
+      else if (e.code === 'KeyE') { if (!e.repeat) this.ddp.act(); }
       else if (e.code === 'KeyM') this.openMenu('map');
       else if (e.code === 'KeyV') this.toggleMic();
       else if (e.code === 'Digit1') this.emote('wave');
