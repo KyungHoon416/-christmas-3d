@@ -264,3 +264,46 @@ test('duel ends with a win for the opponent when a player leaves', async () => {
   assert.equal(end.winner, a.id);
   assert.equal(end.reason, 'left');
 });
+
+test('DDP: zone warp, seat occupancy is exclusive and released on move (DDP-09/14)', async () => {
+  const a = await client('관객A');
+  const b = await client('관객B');
+  for (const c of [a, b]) { c.send({ t: 'join', region: 'ddp' }); c.joined = await c.wait((m) => m.t === 'joined' && m.region === 'ddp'); }
+  // warp into the art hall
+  a.send({ t: 'warp', zone: 'hall' });
+  const w = await a.wait((m) => m.t === 'correct' && m.reason === 'warp');
+  assert.equal(w.zone, 'hall');
+  a.joined.pos = w.pos;
+  b.send({ t: 'warp', zone: 'hall' });
+  b.joined.pos = (await b.wait((m) => m.t === 'correct' && m.reason === 'warp')).pos;
+  b.send({ t: 'warp', zone: 'nowhere' });
+  assert.equal((await b.wait('error')).code, 'warp');
+  // pick a seat in the row next to the hall warp point (aisle)
+  const { getRegion } = await import('../shared/regions.js');
+  const r = getRegion('ddp');
+  const seat = r.seats.filter((s) => Math.abs(s.y - w.pos.y) < 1.2).sort((p, q) => Math.hypot(p.x - w.pos.x, p.z - w.pos.z) - Math.hypot(q.x - w.pos.x, q.z - w.pos.z))[0];
+  assert.ok(seat, 'seat near the aisle');
+  a.send({ t: 'seat', id: seat.id, sit: true });
+  const ok = await a.wait('seat');
+  assert.equal(ok.ok, true);
+  assert.equal(ok.id, seat.id);
+  const taken = await b.wait((m) => m.t === 'seats' && m.taken[seat.id] === a.id);
+  assert.ok(taken);
+  b.send({ t: 'seat', id: seat.id, sit: true });
+  const no = await b.wait('seat');
+  assert.equal(no.ok, false);
+  assert.equal(no.reason, 'taken');
+  // far seat is rejected
+  const far = r.seats.find((s) => Math.hypot(s.x - w.pos.x, s.z - w.pos.z) > 8);
+  b.send({ t: 'seat', id: far.id, sit: true });
+  assert.equal((await b.wait('seat')).reason, 'far');
+  // standing up frees the seat for B
+  a.send({ t: 'seat', sit: false });
+  await b.wait((m) => m.t === 'seats' && !m.taken[seat.id]);
+  b.send({ t: 'seat', id: seat.id, sit: true });
+  assert.equal((await b.wait('seat')).ok, true);
+  // B leaves the region -> seat is released
+  b.send({ t: 'join', region: 'namsan' });
+  await a.wait((m) => m.t === 'seats' && !m.taken[seat.id]);
+  a.close(); b.close();
+});

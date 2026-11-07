@@ -1,7 +1,7 @@
 // Canvas minimap (player-centred, north-up) and full region map renderer.
 const ICON = { gate: '⛩', statue: '🗿', tree: '🎄', building: '🏛', market: '🛍', rink: '⛸', photo: '📸', light: '✨', bridge: '🌉', stone: '🪨', church: '⛪', subway: 'Ⓜ', shop: '🛍', flower: '🌹', tower: '🗼', heart: '💗' };
 
-export function drawRegion(ctx, region, { cx, cz, scale, w, h, players = [], me = null, labels = false, friendIds = new Set(), coupleId = null }) {
+export function drawRegion(ctx, region, { cx, cz, scale, w, h, players = [], me = null, labels = false, friendIds = new Set(), coupleId = null, floor = 1 }) {
   const X = (x) => w / 2 + (x - cx) * scale;
   const Z = (z) => h / 2 + (z - cz) * scale;
   ctx.fillStyle = '#121a33';
@@ -26,9 +26,23 @@ export function drawRegion(ctx, region, { cx, cz, scale, w, h, players = [], me 
     for (const br of region.bridges) ctx.fillRect(X(br.x - br.hw), Z(-9), br.hw * 2 * scale, 18 * scale);
   }
   for (const ice of region.ice || []) { ctx.fillStyle = '#7fb6e6'; ctx.fillRect(X(ice.x - ice.hw), Z(ice.z - ice.hd), ice.hw * 2 * scale, ice.hd * 2 * scale); }
+  // multi-floor buildings (DDP): show the walkable 2F decks, hide the other floor's walls
+  const F2 = region.indoor?.F2;
+  if (F2) {
+    ctx.fillStyle = floor === 2 ? 'rgba(20,24,44,0.75)' : '#2c3658';
+    ctx.beginPath(); ctx.ellipse(X(region.indoor.x), Z(region.indoor.z), region.indoor.rx * 0.9 * scale, region.indoor.rz * 0.9 * scale, 0, 0, Math.PI * 2); ctx.fill();
+    if (floor === 2) {
+      ctx.fillStyle = '#4a5a8c';
+      for (const sf of region.surfaces) if (sf.y === F2) ctx.fillRect(X(sf.x - sf.hw), Z(sf.z - sf.hd), sf.hw * 2 * scale, sf.hd * 2 * scale);
+    }
+  }
   // colliders (buildings & structures)
   for (const c of region.colliders) {
     if (c.y1 !== undefined && c.y1 < 0) continue;
+    if (F2 && c.cam === false) continue; // furniture / seat rows
+    if (F2 && floor === 1 && c.y0 !== undefined && c.y0 >= F2 - 0.7) continue;
+    if (F2 && floor === 2 && c.y1 !== undefined && c.y1 < F2) continue;
+    if (F2 && labels === false && c.vis === 'rail' && floor === 1) continue;
     if (c.t === 'circle' && c.r < 1) continue;
     ctx.fillStyle = c.t === 'circle' ? '#3d6b4f' : '#56607f';
     if (c.t === 'box') {
@@ -41,6 +55,7 @@ export function drawRegion(ctx, region, { cx, cz, scale, w, h, players = [], me 
   // landmarks
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const m of region.map) {
+    if (F2 && m.floor && m.floor !== floor) continue;
     const px = X(m.x), pz = Z(m.z);
     if (px < -20 || pz < -20 || px > w + 20 || pz > h + 20) continue;
     ctx.font = `${labels ? 18 : 12}px sans-serif`;
@@ -90,6 +105,7 @@ export class Minimap {
       cx: me.pos.x, cz: me.pos.z, scale: this.zoom * dpr, w, h,
       players: [...this.world.remotes.values()], me: { x: me.pos.x, z: me.pos.z, ry: me.ry },
       friendIds: this.app.friendIds(), coupleId: this.app.self?.couple?.with,
+      floor: me.pos.y > 3 ? 2 : 1,
     });
   }
 }

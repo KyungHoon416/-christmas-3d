@@ -98,6 +98,8 @@ export class Game {
       case 'hit': return this.hit(s, msg);
       case 'shot': return this.shot(s, msg);
       case 'dhit': return this.duelHit(s, msg);
+      case 'seat': return this.seat(s, msg);
+      case 'warp': return this.warp(s, msg);
       case 'forfeit': return s.duel && this.endDuel(s.duel, this.opponent(s.duel, s.user.id), 'forfeit');
       case 'read': return; // read receipts are client-side only for now
       default: return conn.send({ t: 'error', code: 'unknown', m: msg.t });
@@ -176,7 +178,7 @@ export class Game {
     this.store.save();
     const players = [...room.players].filter((o) => o !== s).map((o) => this.publicView(o));
     const holds = [...room.holds.values()].filter((h, i, a) => a.indexOf(h) === i);
-    this.send(s, { t: 'joined', region: regionId, pos: p, ry: s.ry, players, holds, scores: [...room.scores] });
+    this.send(s, { t: 'joined', region: regionId, pos: p, ry: s.ry, players, holds, scores: [...room.scores], seats: room.seats ? Object.fromEntries(room.seats) : {} });
     this.broadcastRoom(room, { t: 'pjoin', p: this.publicView(s) }, s);
     this.notifyFriends(s.user.id);
   }
@@ -185,6 +187,7 @@ export class Game {
     const room = s.room;
     if (!room) return;
     this.releaseHold(s, 'leave');
+    this.standUp(s, false);
     if (s.duel) this.endDuel(s.duel, this.opponent(s.duel, s.user.id), 'left');
     room.players.delete(s);
     s.user.lastPos = { ...s.pos };
@@ -194,6 +197,58 @@ export class Game {
 
   broadcastRoom(room, msg, except = null) {
     for (const o of room.players) if (o !== except) this.send(o, msg);
+  }
+
+  // ------------------------------------------------------------ seats & zone warps (DDP)
+  seat(s, m) {
+    const room = s.room;
+    if (!room || !room.region.seats) return;
+    room.seats ||= new Map(); // seatId -> userId
+    if (!m.sit) return this.standUp(s, true);
+    const seat = room.region.seats.find((x) => x.id === m.id);
+    if (!seat) return this.send(s, { t: 'seat', ok: false, reason: 'unknown' });
+    if (s.duel) return this.send(s, { t: 'seat', ok: false, reason: 'duel' });
+    if (dist2(s.pos, seat) > 4.5 || Math.abs((s.pos.y || 0) - seat.y) > 1.3) return this.send(s, { t: 'seat', ok: false, reason: 'far' });
+    const occ = room.seats.get(seat.id);
+    if (occ && occ !== s.user.id) return this.send(s, { t: 'seat', ok: false, reason: 'taken' });
+    this.releaseHold(s, 'seat');
+    if (s.seat && s.seat !== seat.id) room.seats.delete(s.seat);
+    room.seats.set(seat.id, s.user.id);
+    s.seat = seat.id;
+    s.pos = { x: seat.x, y: seat.y, z: seat.z };
+    s.ry = seat.ry;
+    s.anim = 'sit';
+    s.lastPose = now();
+    this.send(s, { t: 'seat', ok: true, id: seat.id, pos: s.pos, ry: seat.ry });
+    this.broadcastRoom(room, { t: 'seats', taken: Object.fromEntries(room.seats) });
+  }
+
+  standUp(s, notify) {
+    const room = s.room;
+    if (!s.seat || !room?.seats) { s.seat = null; return; }
+    if (room.seats.get(s.seat) === s.user.id) room.seats.delete(s.seat);
+    s.seat = null;
+    if (notify) this.send(s, { t: 'seat', ok: true, id: null });
+    this.broadcastRoom(room, { t: 'seats', taken: Object.fromEntries(room.seats) });
+  }
+
+  warp(s, m) {
+    const room = s.room;
+    const p = room?.region.warps?.[m.zone];
+    if (!p) return this.send(s, { t: 'error', code: 'warp' });
+    if (s.duel) return this.send(s, { t: 'notice', m: '눈싸움 대결 중에는 구역 이동을 할 수 없어요.' });
+    this.releaseHold(s, 'warp');
+    this.standUp(s, false);
+    // small spread so several people warping at once don't stack
+    let q = { ...p };
+    for (let i = 0; i < 8; i++) {
+      const a = Math.random() * Math.PI * 2, d = 0.6 + Math.random() * 1.2;
+      const c = { x: p.x + Math.cos(a) * d, y: p.y, z: p.z + Math.sin(a) * d };
+      if (!room.world.blocked(c.x, c.z, c.y) && Math.abs(room.world.groundAt(c.x, c.z, c.y + 0.2) - c.y) < 0.05) { q = c; break; }
+    }
+    s.pos = q;
+    s.lastPose = now();
+    this.send(s, { t: 'correct', pos: s.pos, reason: 'warp', zone: m.zone });
   }
 
   // ------------------------------------------------------------ movement
@@ -210,7 +265,7 @@ export class Game {
     const minY = room.region.low !== undefined ? room.region.low - 1 : -1;
     let reason = null;
     if (moved > maxMove && !follower) reason = 'speed';
-    else if (y < minY || y > 6) reason = 'height';
+    else if (y < minY || y > (room.region.high ?? 6)) reason = 'height';
     else if (room.world.blocked(x, z, y, 0.25)) reason = 'collision';
     if (follower) {
       const leader = this.sessions.get(s.hold.a);
@@ -226,6 +281,7 @@ export class Game {
     s.pos = { x, y, z };
     s.ry = ry;
     s.anim = ANIMS.has(m.anim) ? m.anim : 'idle';
+    if (s.seat && moved > 0.4) this.standUp(s, true); // walked away from the seat
     s.lastPose = t;
   }
 

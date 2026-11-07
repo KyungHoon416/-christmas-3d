@@ -16,6 +16,7 @@ const FIREBASE = typeof __FIREBASE__ !== 'undefined' && __FIREBASE__;
 import { Voice } from '../net/voice.js';
 import { CarolPlayer } from '../audio/carol.js';
 import { DuelController } from '../game/duel.js';
+import { DDPInteraction } from '../game/ddpInteract.js';
 import { Chat } from './chat.js';
 import { Minimap, drawRegion } from './minimap.js';
 import { el, $, $$, esc, avatar, toast, modal, confirmDialog } from './dom.js';
@@ -66,6 +67,7 @@ export class App {
     });
     this.carol = new CarolPlayer();
     this.duel = new DuelController(this);
+    this.ddp = new DDPInteraction(this);
     this.carol.onSong = (t) => { if (this.carolTitle) this.carolTitle.textContent = t; };
     this.bindNet();
     this.showLogin();
@@ -425,6 +427,7 @@ export class App {
       if (e.code === 'Space' && this.duel.inDuel) { this.input.jumpQueued = false; this.duel.fire(); return; }
       if (e.code === 'KeyF') { if (!this.duel.fire()) this.requestDuel(); }
       else if (e.code === 'KeyR') this.duel.reload();
+      else if (e.code === 'KeyE') this.ddp.act();
       else if (e.code === 'KeyM') this.openMenu('map');
       else if (e.code === 'KeyV') this.toggleMic();
       else if (e.code === 'Digit1') this.emote('wave');
@@ -472,6 +475,7 @@ export class App {
     this.minimap?.update(dt);
     if (this.duel.inDuel && (this.fireHeld || this.input.keys.has('Space'))) { this.input.jumpQueued = false; this.duel.fire(); }
     this.duel.update(dt);
+    this.ddp.update(dt);
     if (this.mctl) {
       const d = this.duel.inDuel;
       if (d !== this._mDuel) {
@@ -568,10 +572,13 @@ export class App {
     if (!this.profileEl || !this.self) return;
     const region = this.world.region ? this.world.region.name : '-';
     const c = this.self.couple;
+    const crumb = this.ddp?.breadcrumb() || ['대한민국', '서울', region];
+    const zone = this.ddp?.zoneName();
     this.profileEl.innerHTML = `${avatar(this.self.nick, { online: true })}
       <div><div class="nick">${esc(this.self.nick)}</div>
-      <div class="meta"><span class="tag">📍 ${esc(region)}</span>${c ? `<span class="tag pink">♥ ${esc(c.nick)}</span>` : ''}${this.social.party ? `<span class="tag">🎉 파티 ${this.social.party.length}명</span>` : ''}</div></div>`;
-    if (this.regionNameEl) this.regionNameEl.textContent = region;
+      <div class="crumb" data-crumb title="현재 위치">${crumb.map(esc).join(' <i>›</i> ')}</div>
+      <div class="meta"><span class="tag">📍 ${esc(zone ? `${region} · ${zone}` : region)}</span>${c ? `<span class="tag pink">♥ ${esc(c.nick)}</span>` : ''}${this.social.party ? `<span class="tag">🎉 파티 ${this.social.party.length}명</span>` : ''}</div></div>`;
+    if (this.regionNameEl) this.regionNameEl.textContent = zone ? `${region} · ${zone}` : region;
     this.refreshLabel(this.self.id);
   }
 
@@ -964,8 +971,12 @@ export class App {
 
   openFullMap(onClose) {
     const r = this.world.region;
+    const zones = r.zones ? `<div class="section-title">${esc(r.name)} 실내 구역 <span class="floor-toggle"><button class="btn sm" data-floor="1">1F</button><button class="btn sm" data-floor="2">2F</button></span></div>
+      <p class="note crumbline">${(this.ddp.breadcrumb()).map(esc).join(' › ')}</p>
+      <div class="region-list" data-zones>${r.zones.map((z) => `<button class="btn ${this.ddp.zone === z.id ? 'primary' : ''}" data-zone="${z.id}">${esc(z.name)}${z.warp[2] > 3 ? ' (2F)' : ''}</button>`).join('')}</div>` : '';
+    let floor = this.world.me.pos.y > 3 ? 2 : 1;
     const m = modal('서울 월드맵', `<canvas class="fullmap" data-map></canvas>
-      <p class="note">● 흰색: 주변 사람 · <span style="color:#57e39a">●</span> 친구 · <span style="color:#ff5fa2">●</span> 커플 · ▲ 나 — 1칸 = 실제 ${r.scale}m (게임 좌표 1m 기준)</p>
+      <p class="note">● 흰색: 주변 사람 · <span style="color:#57e39a">●</span> 친구 · <span style="color:#ff5fa2">●</span> 커플 · ▲ 나 — 1칸 = 실제 ${r.scale}m (게임 좌표 1m 기준)</p>${zones}
       <div class="section-title">다른 지역으로 이동</div>
       <div class="region-list">${REGIONS.map((x) => `<button class="btn ${x.id === r.id ? 'primary' : ''}" data-r="${x.id}">${x.name}</button>`).join('')}</div>`, { wide: true, onClose });
     const c = $('[data-map]', m);
@@ -978,11 +989,18 @@ export class App {
       const cx = b.circle ? b.x : (b.minX + b.maxX) / 2, cz = b.circle ? b.z : (b.minZ + b.maxZ) / 2;
       const scale = Math.min(c.width / (bw + 20), c.height / (bh + 20));
       const me = this.world.me;
-      drawRegion(c.getContext('2d'), r, { cx, cz, scale, w: c.width, h: c.height, players: [...this.world.remotes.values()], me: { x: me.pos.x, z: me.pos.z, ry: me.ry }, labels: true, friendIds: this.friendIds(), coupleId: this.self.couple?.with });
+      drawRegion(c.getContext('2d'), r, { cx, cz, scale, w: c.width, h: c.height, players: [...this.world.remotes.values()].filter((p) => !r.zones || (p.pos.y > 3 ? 2 : 1) === floor), me: { x: me.pos.x, z: me.pos.z, ry: me.ry }, labels: true, friendIds: this.friendIds(), coupleId: this.self.couple?.with, floor });
       requestAnimationFrame(draw);
     };
     requestAnimationFrame(draw);
-    m.querySelector('.region-list').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { m.close(); this.travel(b.dataset.r); } };
+    for (const list of m.querySelectorAll('.region-list')) list.onclick = (e) => {
+      const b = e.target.closest('[data-r]'); if (b) { m.close(); this.travel(b.dataset.r); return; }
+      const z = e.target.closest('[data-zone]'); if (z) { m.close(); this.ddp.warp(z.dataset.zone); }
+    };
+    const fbtns = m.querySelectorAll('[data-floor]');
+    const syncFloor = () => fbtns.forEach((b) => b.classList.toggle('primary', +b.dataset.floor === floor));
+    fbtns.forEach((b) => (b.onclick = () => { floor = +b.dataset.floor; syncFloor(); }));
+    syncFloor();
   }
 
   openEvents(onClose) {

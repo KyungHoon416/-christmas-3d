@@ -9,6 +9,8 @@
 // (real metres per world metre) so a region is walkable in a few minutes.
 // They are NOT survey-accurate; see docs/WORLD_MAP_SPEC.md.
 
+import { DDP, ddpRim as ddpRimFn, insideDDP as insideDDPfn, buildDDPLayout, L as DDPL, ZONES as DDP_ZONES, ddpZoneOf, ddpCeiling, ddpVoiceFactor } from './ddp.js';
+
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -304,36 +306,8 @@ function myeongdong() {
 }
 
 // ---------------------------------------------------------------- DDP
-// The shell's footprint is an ellipse with a flowing "wobble"; the same function
-// shapes the 3D shell (client) and the wall colliders (client + server).
-export const DDP = { x: -4, z: -26, rx: 46, rz: 20, inner: 0.84, doorHalf: 4.3, doorH: 4.6 };
-export function ddpWob(a) { return 1 + 0.07 * Math.sin(a * 3 + 0.6) + 0.04 * Math.sin(a * 5); }
-export function ddpRim(a, k = 1) { const w = ddpWob(a) * k; return [DDP.x + Math.cos(a) * DDP.rx * w, DDP.z + Math.sin(a) * DDP.rz * w]; }
-export function insideDDP(x, z, k = DDP.inner) {
-  const a = Math.atan2((z - DDP.z) / DDP.rz, (x - DDP.x) / DDP.rx);
-  const w = ddpWob(a) * k;
-  return ((x - DDP.x) / (DDP.rx * w)) ** 2 + ((z - DDP.z) / (DDP.rz * w)) ** 2 < 1;
-}
-
-function ddpWalls() {
-  // outer ring at the shell rim + inner ring (the interior wall); both open at the
-  // south door, joined by a short corridor
-  const out = [];
-  const N = 112;
-  for (const [k, thick] of [[1, 0.6], [DDP.inner, 0.35]]) {
-    for (let i = 0; i < N; i++) {
-      const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2;
-      const [x0, z0] = ddpRim(a0, k), [x1, z1] = ddpRim(a1, k);
-      const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
-      if (Math.abs(mx - DDP.x) < DDP.doorHalf && mz > DDP.z) continue; // door
-      const dx = x1 - x0, dz = z1 - z0;
-      out.push({ t: 'box', x: mx, z: mz, hw: Math.hypot(dx, dz) / 2 + 0.05, hd: thick, rot: Math.atan2(-dz, dx), cam: true });
-    }
-  }
-  const zo = ddpRim(Math.PI / 2, 1)[1], zi = ddpRim(Math.PI / 2, DDP.inner)[1];
-  for (const sx of [-1, 1]) out.push({ t: 'box', x: DDP.x + sx * (DDP.doorHalf + 0.3), z: (zo + zi) / 2, hw: 0.3, hd: (zo - zi) / 2 + 0.4, cam: true });
-  return out;
-}
+// Building layout lives in shared/ddp.js (exterior shell, 6 indoor zones, 2 floors).
+export { DDP, ddpWob, ddpRim, insideDDP } from './ddp.js';
 
 function ddp() {
   const rng = mulberry32(5005);
@@ -345,65 +319,56 @@ function ddp() {
     if (b.face === 'west') b.x = 74 + b.w / 2;
     if (b.face === 'south') b.z = -66 - b.d / 2;
   }
-  const lamps = [...lampsAlong('x', 18, -60, 60, 12), ...lampsAlong('z', -58, -50, 60, 12), ...lampsAlong('z', 60, -50, 60, 12)];
+  const layout = buildDDPLayout();
+  const lamps = [...lampsAlong('x', 18, -60, 60, 12), ...lampsAlong('z', -64, -50, 60, 12), ...lampsAlong('z', 66, -50, 60, 12)]
+    .filter((l) => !insideDDPfn(l.x, l.z, 1.08));
+  // curved plaza planters (reference: low white curved walls around the plaza)
+  const planters = [
+    { cx: -34, cz: 14, r: 13, a0: -0.2, a1: 1.9 },
+    { cx: 30, cz: 18, r: 14, a0: 1.3, a1: 3.0, sign: 'DDP' },
+  ];
+  const planterCols = [];
+  for (const p of planters) for (let a = p.a0; a <= p.a1; a += 0.9 / p.r) planterCols.push({ t: 'circle', x: p.cx + Math.cos(a) * p.r, z: p.cz + Math.sin(a) * p.r, r: 0.75 });
   const landmarks = {
-    ddp: { x: -4, z: -26, rx: 46, rz: 20 },
-    roses: { x: 0, z: 36, hw: 34, hd: 12 },
-    photo: { x: 42, z: 14 },
-    tree: { x: 30, z: 0, r: 3.4, h: 15 },
-    media: { x: -4, z: -5 },
+    roses: { x: 0, z: 36, hw: 34, hd: 11 },
+    photo: { x: 46, z: 30 },
+    tree: { x: 34, z: 6, r: 3.4, h: 15 },
     subway: [{ x: -62, z: 50, rot: 0 }],
   };
-  // interior exhibition: "DDP 크리스마스 디자인 마켓"
-  const interior = {
-    sculpture: { x: DDP.x, z: DDP.z + 1, r: 2.6 },
-    lightTree: { x: DDP.x + 20, z: DDP.z - 1, r: 2.2, h: 8 },
-    booths: [
-      { x: DDP.x - 24, z: DDP.z - 4, ry: 0.35, title: 'SEOUL DESIGN', sub: '서울 디자인 굿즈' },
-      { x: DDP.x - 13, z: DDP.z - 9, ry: 0.15, title: 'WINTER LIGHT', sub: '빛 공예 전시' },
-      { x: DDP.x - 2, z: DDP.z - 11, ry: 0, title: 'K-CRAFT', sub: '전통 공예 오너먼트' },
-      { x: DDP.x + 9, z: DDP.z - 10, ry: -0.1, title: 'SNOW GLOBE', sub: '스노우볼 만들기' },
-      { x: DDP.x - 27, z: DDP.z + 6, ry: 2.6, title: 'HANBOK WINTER', sub: '겨울 한복 컬렉션' },
-      { x: DDP.x + 28, z: DDP.z + 6, ry: -2.6, title: 'CAROL LAB', sub: '캐럴 작곡 체험' },
-    ],
-    benches: [
-      { x: DDP.x - 6, z: DDP.z + 6, ry: 0 }, { x: DDP.x + 6, z: DDP.z + 6, ry: 0 },
-      { x: DDP.x - 15, z: DDP.z + 3, ry: 0.3 }, { x: DDP.x + 14, z: DDP.z + 7, ry: -0.2 },
-    ],
-  };
-  // signposts around the building pointing to the south entrance
   const signs = [0, Math.PI, -Math.PI / 2, -Math.PI / 4, -3 * Math.PI / 4, Math.PI / 5, (4 * Math.PI) / 5].map((a) => {
-    const [px, pz] = ddpRim(a, 1.13);
-    // walking direction around the building toward the door (shortest way)
-    const toDoor = Math.sign(Math.sin(Math.PI / 2 - a)) || 1;
-    return { x: px, z: pz, a, dir: (Math.cos(a) >= 0 ? 1 : -1) * (pz > DDP.z ? 1 : -1) * toDoor };
+    const [px, pz] = ddpRimFn(a, 1.1);
+    return { x: px, z: pz, a };
   });
-  interior.signs = signs;
   const colliders = [
-    ...ddpWalls(),
-    ...signs.map((s) => ({ t: 'circle', x: s.x, z: s.z, r: 0.35 })),
-    { t: 'circle', x: interior.sculpture.x, z: interior.sculpture.z, r: interior.sculpture.r },
-    { t: 'circle', x: interior.lightTree.x, z: interior.lightTree.z, r: interior.lightTree.r },
-    ...interior.booths.map((b) => ({ t: 'box', x: b.x, z: b.z, hw: 2.1, hd: 1.5, rot: b.ry })),
-    ...interior.benches.map((b) => ({ t: 'box', x: b.x, z: b.z, hw: 1, hd: 0.35, rot: b.ry })),
-    { t: 'circle', x: 30, z: 0, r: 3.4 },
+    ...layout.colliders,
+    ...planterCols,
+    ...signs.map((sg) => ({ t: 'circle', x: sg.x, z: sg.z, r: 0.35 })),
+    { t: 'circle', x: landmarks.tree.x, z: landmarks.tree.z, r: landmarks.tree.r },
     { t: 'box', x: -62, z: 50, hw: 1.8, hd: 3 },
-    { t: 'box', x: 42, z: 14, hw: 3.5, hd: 0.5 },
+    { t: 'box', x: landmarks.photo.x, z: landmarks.photo.z, hw: 3.5, hd: 0.5, rot: -Math.PI / 2 },
   ];
+  const seats = layout.seats.map((st) => { const [x, z] = DDPL(st.lx, st.lz); return { ...st, x, z }; });
+  const zoneWarps = Object.fromEntries(DDP_ZONES.map((zn) => { const [x, z] = DDPL(zn.warp[0], zn.warp[1]); return [zn.id, { x, y: zn.warp[2], z }]; }));
   return {
     id: 'ddp', name: 'DDP', en: 'Dongdaemun Design Plaza', scale: 2.2,
-    desc: '곡면 건축물 안 크리스마스 디자인 마켓, LED 장미정원, 미디어아트',
-    highlights: ['실내 디자인 마켓', 'LED 장미정원', '미디어아트'],
+    desc: '곡면 건축물 안 로비·전시·스토어·아트홀·둘레길, LED 장미정원',
+    highlights: ['실내 6개 공간', 'LED 장미정원', '아트홀'],
     bounds: { minX: -70, maxX: 74, minZ: -66, maxZ: 62 },
     spawn: { x: 0, z: 54, rot: Math.PI },
-    buildings, lamps, stalls: [], decoTrees: [], landmarks, colliders, surfaces: [], interior,
+    buildings, lamps, stalls: [], decoTrees: [], landmarks, colliders, surfaces: layout.surfaces,
+    cameraColliders: layout.camColliders,
+    high: DDP.F2 + 3, // 2F + jump
+    ddp: { ...layout, signs, planters },
     indoor: { ...DDP },
+    seats, warps: zoneWarps, zones: DDP_ZONES, zoneOf: ddpZoneOf, ceilingAt: ddpCeiling, voiceFactor: ddpVoiceFactor,
     map: [
-      { x: -4, z: -26, label: 'DDP 디자인 마켓 (실내)', icon: 'building' },
-      { x: DDP.x, z: ddpRim(Math.PI / 2)[1] + 1.5, label: '입구', icon: 'gate' },
+      { x: DDPL(0, 0)[0], z: DDPL(0, 4)[1], label: '메인 로비', icon: 'building' },
+      { x: DDPL(-28, 0)[0], z: DDPL(0, 9)[1], label: '전시 공간', icon: 'photo' },
+      { x: DDPL(25, 0)[0], z: DDPL(0, 10)[1], label: '디자인 스토어', icon: 'shop' },
+      { x: DDPL(26, 0)[0], z: DDPL(0, -5)[1], label: '아트홀', icon: 'light' },
+      { x: DDPL(0, 0)[0], z: DDPL(0, -19)[1], label: '디자인 둘레길 (2F)', icon: 'heart', floor: 2 },
+      { x: DDP.x, z: ddpRimFn(Math.PI / 2)[1] + 1.5, label: '입구', icon: 'gate' },
       { x: 0, z: 36, label: 'LED 장미정원', icon: 'flower' },
-      { x: 42, z: 14, label: '포토존', icon: 'photo' },
-      { x: 30, z: 0, label: '트리', icon: 'tree' },
     ],
   };
 }

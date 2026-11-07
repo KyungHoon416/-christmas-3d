@@ -374,3 +374,22 @@ body.mobile.portrait .mctl { bottom: calc(30px + var(--safe-b)); }
 /* portrait: keep the action bar above the joystick */
 body.mobile.portrait .actions { bottom: calc(232px + var(--safe-b)); }
 body.mobile.portrait .joystick:not(.active) { top: calc(100% - 128px - var(--safe-b)); }
+
+/* ---- DDP: breadcrumb, interaction prompt, artwork/product panels */
+.profile .crumb { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.profile .crumb i { font-style: normal; opacity: 0.6; margin: 0 2px; }
+.ddp-prompt { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 8; display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px 10px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.25); background: rgba(20,18,40,0.82); color: #fff;
+  font: 600 14px "Noto Sans KR", sans-serif; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+.ddp-prompt kbd { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: #ff5fa2; color: #fff; font: 800 14px sans-serif; }
+.ddp-prompt.hidden { display: none; }
+body.mobile .ddp-prompt { bottom: calc(210px + var(--safe-b, 0px)); font-size: 15px; padding: 12px 20px 12px 12px; }
+body.mobile .ddp-prompt kbd { font-size: 0; width: 30px; height: 30px; }
+body.mobile .ddp-prompt kbd::after { content: '👆'; font-size: 16px; }
+.ddp-art { display: grid; grid-template-columns: minmax(180px, 1fr) 1.2fr; gap: 16px; align-items: start; }
+.ddp-art img { width: 100%; border-radius: 10px; display: block; }
+.ddp-prod { width: 100%; aspect-ratio: 1; border-radius: 12px; background: radial-gradient(circle at 50% 40%, #3a3358, #15132a); touch-action: none; cursor: grab; }
+@media (max-width: 640px) { .ddp-art { grid-template-columns: 1fr; } }
+.floor-toggle { float: right; display: inline-flex; gap: 6px; }
+.floor-toggle .btn { padding: 2px 12px; min-height: 0; font-size: 12px; }
+.crumbline { margin: 4px 0 8px; }

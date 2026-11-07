@@ -14,6 +14,8 @@ export const QUALITY = {
   high: { pr: 2, shadows: true, shadowSize: 2048, bloom: true, lights: 6, fog: 0.0105, antialias: true },
 };
 
+const _warmSky = new THREE.Color(0xffe2c4), _warmGround = new THREE.Color(0x6a4a3a), _warmFill = new THREE.Color(0xffc9a0);
+
 export class Engine {
   constructor(container, { quality = 'medium', preserveDrawingBuffer = false } = {}) {
     this.container = container;
@@ -156,7 +158,10 @@ export class Engine {
     this.updaters = built.updaters;
     this.regionFog = regionData.id === 'namsan' ? 0.0042 : null;
     const I = regionData.indoor;
-    this.snow.roof = I ? { v: new THREE.Vector4(I.x, I.z, I.rx * 1.08, I.rz * 1.08), h: 30 } : null;
+    // no snow inside the building; outside the inner wall (k > 0.93) it keeps falling, so it
+    // is visible through the glass of the store and design-loop windows
+    this.snow.roof = I ? { v: new THREE.Vector4(I.x, I.z, I.rx * 0.93, I.rz * 0.93), h: 30 } : null;
+    this.indoorK = 0;
     this.scene.fog.density = this.regionFog ?? QUALITY[this.quality].fog;
     this.camera.far = regionData.id === 'namsan' ? 6000 : 3000;
     this.camera.updateProjectionMatrix();
@@ -191,6 +196,7 @@ export class Engine {
       const t0 = performance.now();
       this.renderer.info.reset();
       this.onFrame?.(dt, this.time);
+      this.updateAmbience(dt);
       for (const u of this.updaters) u(dt, this.time);
       this.snow.update(dt, this.time, this.camera, this.region?.lamps || [], this.renderer.getPixelRatio());
       this.footprints.update(dt);
@@ -206,6 +212,20 @@ export class Engine {
       this.adapt(dt);
     };
     loop();
+  }
+
+  // Warm indoor light vs. cold blue night outside (smoothly blended).
+  updateAmbience(dt) {
+    const k = (this.indoorK = (this.indoorK || 0) + ((this.indoor ? 1 : 0) - (this.indoorK || 0)) * (1 - Math.exp(-2.5 * dt)));
+    if (!this._hemiSky) { this._hemiSky = this.hemi.color.clone(); this._hemiGround = this.hemi.groundColor.clone(); this._fillCol = this.fill.color.clone(); }
+    this.hemi.color.copy(this._hemiSky).lerp(_warmSky, k);
+    this.hemi.groundColor.copy(this._hemiGround).lerp(_warmGround, k);
+    this.hemi.intensity = 0.6 + 0.35 * k;
+    this.fill.color.copy(this._fillCol).lerp(_warmFill, k);
+    this.fill.intensity = 0.25 + 0.2 * k;
+    this.moon.intensity = 0.55 * (1 - 0.7 * k);
+    const base = this.regionFog ?? QUALITY[this.quality].fog;
+    this.scene.fog.density = base * (1 - 0.6 * k);
   }
 
   // Adaptive quality: drop particle density/shadows/bloom first when FPS sags.

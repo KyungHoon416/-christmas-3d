@@ -242,7 +242,9 @@ export class Voice {
       if (!p.gain) continue;
       const r = this.world.remotes.get(p.id);
       const d = r && me ? r.pos.distanceTo(me.pos) : 99;
-      p.targetGain = this.userMuted.has(p.id) ? 0 : voiceGain(d) * (this.userVolume.get(p.id) ?? 1);
+      // 3D distance + floor/room attenuation (DDP: other floor or other hall is quieter)
+      const room = r && me && this.world.region?.voiceFactor ? this.world.region.voiceFactor(me.pos, r.pos) : 1;
+      p.targetGain = this.userMuted.has(p.id) ? 0 : voiceGain(d) * room * (this.userVolume.get(p.id) ?? 1);
       p.gain.gain.setTargetAtTime(p.targetGain, this.ctx.currentTime, 0.08);
     }
   }

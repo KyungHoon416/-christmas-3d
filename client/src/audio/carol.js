@@ -90,13 +90,19 @@ export class CarolPlayer {
   setAmbient(on) {
     this.init();
     this.ambientOn = on;
-    this.ambient.gain.setTargetAtTime(on ? this.ambientVolume : 0, this.ctx.currentTime, 0.5);
+    this.ambient.gain.setTargetAtTime(on ? this.ambientVolume * (this.indoor ? 0.2 : 1) : 0, this.ctx.currentTime, 0.5);
+  }
+
+  // indoors (DDP): the winter wind outside is muffled
+  setIndoor(on) {
+    this.indoor = on;
+    if (this.ambient && this.ambientOn) this.ambient.gain.setTargetAtTime(this.ambientVolume * (on ? 0.2 : 1), this.ctx.currentTime, 0.8);
   }
 
   setAmbientVolume(v) {
     this.ambientVolume = v;
     localStorage.setItem('cw.ambVol', v);
-    if (this.ambient && this.ambientOn) this.ambient.gain.setTargetAtTime(v, this.ctx.currentTime, 0.2);
+    if (this.ambient && this.ambientOn) this.ambient.gain.setTargetAtTime(v * (this.indoor ? 0.2 : 1), this.ctx.currentTime, 0.2);
   }
 
   setVolume(v) {

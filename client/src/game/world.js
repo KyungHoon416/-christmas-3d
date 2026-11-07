@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { CollisionWorld } from '../../../shared/collision.js';
 import { WALK_SPEED, RUN_SPEED, JUMP_VELOCITY, GRAVITY, NET_SEND_HZ, HOLD_SIDE_OFFSET, PLAYER_RADIUS } from '../../../shared/constants.js';
 import { Character } from '../engine/character.js';
+import { insideDDP } from '../../../shared/ddp.js';
 
 const INTERP_DELAY = 130; // ms
 const tmpV = new THREE.Vector3();
@@ -244,7 +245,16 @@ export class World {
     this.cam.dist = Math.max(2.2, Math.min(16, this.cam.dist + inp.zoom * 0.9));
 
     const wantMove = Math.hypot(inp.x, inp.z) > 0.05;
-    if (this.isFollower()) {
+    if (this.seated) {
+      // sitting on an art-hall seat: stay put until the player moves/jumps
+      if (wantMove || inp.jump) { this.hooks.onStand?.(); this.seated = null; }
+      else {
+        me.pos.set(this.seated.x, this.seated.y, this.seated.z);
+        me.vel.set(0, 0, 0); me.vy = 0; me.grounded = true;
+        me.ry = this.seated.ry; me.anim = 'sit'; me.speed = 0;
+      }
+    }
+    if (this.seated) { /* handled above */ } else if (this.isFollower()) {
       if (wantMove) this.hooks.onFollowerTriedMove?.();
       const leader = this.remotes.get(this.hold.a);
       if (leader) {
@@ -373,7 +383,8 @@ export class World {
     // pull the camera in front of walls (2D march against large colliders)
     let maxD = this.aim ? Math.min(this.cam.dist, 3.3) : this.cam.dist;
     // indoors (DDP hall): keep the camera close and below the ceiling
-    if (this.isIndoor()) { maxD = Math.min(maxD, 6); this.cam.pitch = Math.min(this.cam.pitch, 0.6); }
+    const indoor = this.isIndoor();
+    if (indoor) { maxD = Math.min(maxD, 6); this.cam.pitch = Math.min(this.cam.pitch, 0.6); }
     for (let d = 0.6; d <= this.cam.dist; d += 0.35) {
       const px = target.x + dir.x * d, pz = target.z + dir.z * d, py = target.y + dir.y * d;
       if (this.camColl.blocked(px, pz, py - 1.0, 0.3)) { maxD = Math.max(1.2, d - 0.4); break; }
@@ -384,6 +395,11 @@ export class World {
     const pos = tmpV.copy(target).addScaledVector(dir, this.cam.curDist);
     const groundY = this.coll.groundAt(pos.x, pos.z, target.y) + 0.4;
     if (pos.y < groundY) pos.y = groundY;
+    // indoors: never let the camera poke through a ceiling (corridor vault, store, hall)
+    if (indoor && this.region.ceilingAt) {
+      const cy = Math.min(this.region.ceilingAt(pos.x, pos.z), this.region.ceilingAt(target.x, target.z)) - 0.35;
+      if (pos.y > cy) pos.y = Math.max(cy, target.y + 0.1);
+    }
     this.camera.position.copy(pos);
     this.camera.lookAt(target);
     // undo the shoulder offset so the follow target stays on the player
@@ -393,10 +409,8 @@ export class World {
   }
 
   isIndoor() {
-    const I = this.region?.indoor;
-    if (!I || !this.me) return false;
-    const x = this.me.pos.x, z = this.me.pos.z;
-    return ((x - I.x) / (I.rx * (I.inner + 0.03))) ** 2 + ((z - I.z) / (I.rz * (I.inner + 0.03))) ** 2 < 1.2;
+    if (!this.region?.indoor || !this.me) return false;
+    return insideDDP(this.me.pos.x, this.me.pos.z, 0.9);
   }
 
   cameraForwardYaw() { return this.cam.yaw + Math.PI; }
