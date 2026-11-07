@@ -32,7 +32,7 @@ export function createSky() {
 const SNOW_VS = `
 attribute vec3 aOffset; attribute float aSeed;
 uniform vec3 uCam; uniform vec3 uBox; uniform vec2 uWind; uniform float uFall; uniform float uTime;
-uniform float uSize; uniform float uPR; uniform vec3 uLamps[8];
+uniform float uSize; uniform float uPR; uniform vec3 uLamps[8]; uniform vec4 uRoof; uniform float uRoofH;
 varying float vAlpha; varying float vWarm;
 void main(){
   vec3 p = aOffset * uBox;
@@ -45,6 +45,9 @@ void main(){
   vec3 world = center + rel;
   vec3 e = abs(rel) / uBox;
   vAlpha = 1.0 - smoothstep(0.36, 0.5, max(max(e.x, e.y), e.z));
+  // no snow under a roof (e.g. inside the DDP hall)
+  vec2 rq = (world.xz - uRoof.xy) / uRoof.zw;
+  if (uRoof.z > 0.0 && dot(rq, rq) < 1.0 && world.y < uRoofH) vAlpha = 0.0;
   float warm = 0.0;
   for (int i = 0; i < 8; i++) { vec3 d = world - uLamps[i]; warm += 1.0 / (1.0 + dot(d, d) * 0.12); }
   vWarm = clamp(warm, 0.0, 1.5);
@@ -76,6 +79,7 @@ class SnowLayer {
       uCam: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3(...box) }, uWind: { value: new THREE.Vector2() },
       uFall: { value: 0 }, uTime: { value: 0 }, uSize: { value: size }, uPR: { value: 1 }, uOpacity: { value: opacity },
       uLamps: { value: Array.from({ length: 8 }, () => new THREE.Vector3(0, -999, 0)) },
+      uRoof: { value: new THREE.Vector4(0, 0, 0, 0) }, uRoofH: { value: 0 },
     };
     this.points = new THREE.Points(g, new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: SNOW_VS, fragmentShader: SNOW_FS, transparent: true, depthWrite: false }));
     this.points.frustumCulled = false;
@@ -113,6 +117,7 @@ export class Snow {
     const near = lamps.length > 8 ? [...lamps].sort((a, b) => a.distanceToSquared(camera.position) - b.distanceToSquared(camera.position)).slice(0, 8) : lamps;
     for (const l of this.layers) {
       const u = l.uniforms;
+      if (this.roof) { u.uRoof.value.copy(this.roof.v); u.uRoofH.value = this.roof.h; } else u.uRoof.value.set(0, 0, 0, 0);
       u.uCam.value.copy(camera.position);
       u.uWind.value.copy(this.windOffset);
       u.uFall.value = this.fall * l.fallSpeed;

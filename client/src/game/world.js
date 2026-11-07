@@ -42,7 +42,7 @@ export class World {
     this.region = region;
     this.engine.loadRegion(region);
     this.coll = new CollisionWorld(region.colliders, region.surfaces, region.bounds);
-    const big = region.colliders.filter((c) => (c.t === 'box' && Math.min(c.hw, c.hd) > 0.8) || (c.t === 'circle' && c.r > 1.5) || c.t === 'ellipse');
+    const big = region.colliders.filter((c) => c.cam || (c.t === 'box' && Math.min(c.hw, c.hd) > 0.8) || (c.t === 'circle' && c.r > 1.5) || c.t === 'ellipse');
     this.camColl = new CollisionWorld([...big, ...(region.cameraColliders || [])], [], null);
     if (!this.me) {
       this.me = { char: new Character(this.self.appearance, { seed: hashSeed(this.self.id) }), pos: new THREE.Vector3(), vel: new THREE.Vector3(), vy: 0, ry: 0, grounded: true, anim: 'idle' };
@@ -372,6 +372,8 @@ export class World {
     target.y += 0.15 * this.shoulderK;
     // pull the camera in front of walls (2D march against large colliders)
     let maxD = this.aim ? Math.min(this.cam.dist, 3.3) : this.cam.dist;
+    // indoors (DDP hall): keep the camera close and below the ceiling
+    if (this.isIndoor()) { maxD = Math.min(maxD, 6); this.cam.pitch = Math.min(this.cam.pitch, 0.6); }
     for (let d = 0.6; d <= this.cam.dist; d += 0.35) {
       const px = target.x + dir.x * d, pz = target.z + dir.z * d, py = target.y + dir.y * d;
       if (this.camColl.blocked(px, pz, py - 1.0, 0.3)) { maxD = Math.max(1.2, d - 0.4); break; }
@@ -388,6 +390,13 @@ export class World {
     target.x -= Math.cos(yaw) * shoulder * this.shoulderK;
     target.z -= -Math.sin(yaw) * shoulder * this.shoulderK;
     target.y -= 0.15 * this.shoulderK;
+  }
+
+  isIndoor() {
+    const I = this.region?.indoor;
+    if (!I || !this.me) return false;
+    const x = this.me.pos.x, z = this.me.pos.z;
+    return ((x - I.x) / (I.rx * (I.inner + 0.03))) ** 2 + ((z - I.z) / (I.rz * (I.inner + 0.03))) ** 2 < 1.2;
   }
 
   cameraForwardYaw() { return this.cam.yaw + Math.PI; }

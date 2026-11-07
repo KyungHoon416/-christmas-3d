@@ -304,6 +304,37 @@ function myeongdong() {
 }
 
 // ---------------------------------------------------------------- DDP
+// The shell's footprint is an ellipse with a flowing "wobble"; the same function
+// shapes the 3D shell (client) and the wall colliders (client + server).
+export const DDP = { x: -4, z: -26, rx: 46, rz: 20, inner: 0.84, doorHalf: 4.3, doorH: 4.6 };
+export function ddpWob(a) { return 1 + 0.07 * Math.sin(a * 3 + 0.6) + 0.04 * Math.sin(a * 5); }
+export function ddpRim(a, k = 1) { const w = ddpWob(a) * k; return [DDP.x + Math.cos(a) * DDP.rx * w, DDP.z + Math.sin(a) * DDP.rz * w]; }
+export function insideDDP(x, z, k = DDP.inner) {
+  const a = Math.atan2((z - DDP.z) / DDP.rz, (x - DDP.x) / DDP.rx);
+  const w = ddpWob(a) * k;
+  return ((x - DDP.x) / (DDP.rx * w)) ** 2 + ((z - DDP.z) / (DDP.rz * w)) ** 2 < 1;
+}
+
+function ddpWalls() {
+  // outer ring at the shell rim + inner ring (the interior wall); both open at the
+  // south door, joined by a short corridor
+  const out = [];
+  const N = 112;
+  for (const [k, thick] of [[1, 0.6], [DDP.inner, 0.35]]) {
+    for (let i = 0; i < N; i++) {
+      const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2;
+      const [x0, z0] = ddpRim(a0, k), [x1, z1] = ddpRim(a1, k);
+      const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+      if (Math.abs(mx - DDP.x) < DDP.doorHalf && mz > DDP.z) continue; // door
+      const dx = x1 - x0, dz = z1 - z0;
+      out.push({ t: 'box', x: mx, z: mz, hw: Math.hypot(dx, dz) / 2 + 0.05, hd: thick, rot: Math.atan2(-dz, dx), cam: true });
+    }
+  }
+  const zo = ddpRim(Math.PI / 2, 1)[1], zi = ddpRim(Math.PI / 2, DDP.inner)[1];
+  for (const sx of [-1, 1]) out.push({ t: 'box', x: DDP.x + sx * (DDP.doorHalf + 0.3), z: (zo + zi) / 2, hw: 0.3, hd: (zo - zi) / 2 + 0.4, cam: true });
+  return out;
+}
+
 function ddp() {
   const rng = mulberry32(5005);
   const buildings = [
@@ -323,21 +354,44 @@ function ddp() {
     media: { x: -4, z: -5 },
     subway: [{ x: -62, z: 50, rot: 0 }],
   };
+  // interior exhibition: "DDP 크리스마스 디자인 마켓"
+  const interior = {
+    sculpture: { x: DDP.x, z: DDP.z + 1, r: 2.6 },
+    lightTree: { x: DDP.x + 20, z: DDP.z - 1, r: 2.2, h: 8 },
+    booths: [
+      { x: DDP.x - 24, z: DDP.z - 4, ry: 0.35, title: 'SEOUL DESIGN', sub: '서울 디자인 굿즈' },
+      { x: DDP.x - 13, z: DDP.z - 9, ry: 0.15, title: 'WINTER LIGHT', sub: '빛 공예 전시' },
+      { x: DDP.x - 2, z: DDP.z - 11, ry: 0, title: 'K-CRAFT', sub: '전통 공예 오너먼트' },
+      { x: DDP.x + 9, z: DDP.z - 10, ry: -0.1, title: 'SNOW GLOBE', sub: '스노우볼 만들기' },
+      { x: DDP.x - 27, z: DDP.z + 6, ry: 2.6, title: 'HANBOK WINTER', sub: '겨울 한복 컬렉션' },
+      { x: DDP.x + 28, z: DDP.z + 6, ry: -2.6, title: 'CAROL LAB', sub: '캐럴 작곡 체험' },
+    ],
+    benches: [
+      { x: DDP.x - 6, z: DDP.z + 6, ry: 0 }, { x: DDP.x + 6, z: DDP.z + 6, ry: 0 },
+      { x: DDP.x - 15, z: DDP.z + 3, ry: 0.3 }, { x: DDP.x + 14, z: DDP.z + 7, ry: -0.2 },
+    ],
+  };
   const colliders = [
-    { t: 'ellipse', x: -4, z: -26, rx: 46, rz: 20 },
+    ...ddpWalls(),
+    { t: 'circle', x: interior.sculpture.x, z: interior.sculpture.z, r: interior.sculpture.r },
+    { t: 'circle', x: interior.lightTree.x, z: interior.lightTree.z, r: interior.lightTree.r },
+    ...interior.booths.map((b) => ({ t: 'box', x: b.x, z: b.z, hw: 2.1, hd: 1.5, rot: b.ry })),
+    ...interior.benches.map((b) => ({ t: 'box', x: b.x, z: b.z, hw: 1, hd: 0.35, rot: b.ry })),
     { t: 'circle', x: 30, z: 0, r: 3.4 },
     { t: 'box', x: -62, z: 50, hw: 1.8, hd: 3 },
     { t: 'box', x: 42, z: 14, hw: 3.5, hd: 0.5 },
   ];
   return {
     id: 'ddp', name: 'DDP', en: 'Dongdaemun Design Plaza', scale: 2.2,
-    desc: '곡면 건축물과 LED 장미정원, 미디어아트 포토존',
-    highlights: ['미디어아트', 'LED 장미정원', '대형 포토존'],
+    desc: '곡면 건축물 안 크리스마스 디자인 마켓, LED 장미정원, 미디어아트',
+    highlights: ['실내 디자인 마켓', 'LED 장미정원', '미디어아트'],
     bounds: { minX: -70, maxX: 74, minZ: -66, maxZ: 62 },
     spawn: { x: 0, z: 54, rot: Math.PI },
-    buildings, lamps, stalls: [], decoTrees: [], landmarks, colliders, surfaces: [],
+    buildings, lamps, stalls: [], decoTrees: [], landmarks, colliders, surfaces: [], interior,
+    indoor: { ...DDP },
     map: [
-      { x: -4, z: -26, label: 'DDP', icon: 'building' },
+      { x: -4, z: -26, label: 'DDP 디자인 마켓 (실내)', icon: 'building' },
+      { x: DDP.x, z: ddpRim(Math.PI / 2)[1] + 1.5, label: '입구', icon: 'gate' },
       { x: 0, z: 36, label: 'LED 장미정원', icon: 'flower' },
       { x: 42, z: 14, label: '포토존', icon: 'photo' },
       { x: 30, z: 0, label: '트리', icon: 'tree' },

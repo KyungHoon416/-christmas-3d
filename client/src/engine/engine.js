@@ -155,6 +155,8 @@ export class Engine {
     this.region = built;
     this.updaters = built.updaters;
     this.regionFog = regionData.id === 'namsan' ? 0.0042 : null;
+    const I = regionData.indoor;
+    this.snow.roof = I ? { v: new THREE.Vector4(I.x, I.z, I.rx * 1.08, I.rz * 1.08), h: 30 } : null;
     this.scene.fog.density = this.regionFog ?? QUALITY[this.quality].fog;
     this.camera.far = regionData.id === 'namsan' ? 6000 : 3000;
     this.camera.updateProjectionMatrix();
