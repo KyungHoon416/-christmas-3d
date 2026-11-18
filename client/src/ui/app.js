@@ -98,6 +98,10 @@ export class App {
     const portrait = window.innerHeight > window.innerWidth;
     b.classList.toggle('portrait', portrait);
     b.classList.toggle('landscape', !portrait);
+    // tablets (iPad, Galaxy Tab, unfolded foldables): touch UI but more room -> larger HUD
+    b.classList.toggle('tablet', this.mobile && Math.min(window.innerWidth, window.innerHeight) >= 600);
+    // desktop windows that are narrow / short get a compact HUD
+    b.classList.toggle('compact', !this.mobile && (window.innerWidth < 1180 || window.innerHeight < 820));
     if (this.engine) this.engine.isMobile = this.mobile;
   }
 
@@ -331,6 +335,7 @@ export class App {
       <div class="flist scroll" data-flist></div>
       <div class="foot"><button class="btn primary" data-addfriend>${icon('userPlus', 18)} 친구 추가</button></div></div>`);
     R.appendChild(this.friendsEl);
+    if (!this.mobile && window.innerWidth < 1180) this.friendsEl.classList.add('hidden'); // narrow desktop: open from the top bar
     $$('[data-ft]', this.friendsEl).forEach((b) => (b.onclick = () => { this.friendsTab = b.dataset.ft; $$('[data-ft]', this.friendsEl).forEach((x) => x.classList.toggle('on', x === b)); this.renderFriends(); }));
     $('[data-fsearch]', this.friendsEl).addEventListener('input', () => this.renderFriends());
     $('[data-fsearch]', this.friendsEl).addEventListener('keydown', (e) => e.stopPropagation());
@@ -371,7 +376,9 @@ export class App {
     $('[data-collapse]', this.worldsEl).onclick = () => { document.body.classList.toggle('worlds-collapsed'); localStorage.setItem('cw.worldsCollapsed', document.body.classList.contains('worlds-collapsed') ? '1' : '0'); };
     $('[data-fullmap]', this.worldsEl).onclick = () => this.openMenu('map');
     $('[data-sheetclose]', this.worldsEl).onclick = () => this.closeSheet(this.worldsEl);
-    if (localStorage.getItem('cw.worldsCollapsed') === '1') document.body.classList.add('worlds-collapsed');
+    const wc = localStorage.getItem('cw.worldsCollapsed');
+    // short desktop windows start with the Seoul map strip collapsed (until the user opens it)
+    if (wc === '1' || (wc === null && !this.mobile && window.innerHeight < 820)) document.body.classList.add('worlds-collapsed');
 
     // carol mini-player
     const carol = el(`<div class="carol glass">${icon('music', 16)}<span class="title" data-ct>캐럴</span>

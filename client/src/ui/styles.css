@@ -452,3 +452,50 @@ body.mobile.landscape .look-hint { top: 40%; right: calc(130px + var(--safe-r));
 body.mobile.landscape .joystick:not(.active) { top: calc(100% - 104px - var(--safe-b)); }
 body.mobile.landscape .joystick .jlbl { display: none; }
 body.mobile.landscape .actions { left: calc(50% + 40px); max-width: calc(100vw - 360px - var(--safe-l) - var(--safe-r)); }
+
+/* ================================================================ responsive pass (all devices) */
+/* desktop: chat starts below the (taller) profile card */
+.chat { top: 170px; }
+/* compact desktop windows (narrow or short) */
+body.compact .chat { width: 300px; height: 230px; }
+body.compact .minimap { width: 132px; height: 132px; }
+body.compact .minimap-label { top: 210px; width: 132px; }
+body.compact .sidebtns { top: 246px; gap: 8px; }
+body.compact .sidebtns .roundbtn { width: 44px; height: 44px; }
+body.compact .actions button { width: 52px; font-size: 10.5px; }
+body.compact .actions svg { width: 21px; height: 21px; }
+@media (max-width: 1179px) {
+  body.compact .minimap, body.compact .minimap-label, body.compact .sidebtns { right: calc(14px + var(--safe-r)); }
+  body.compact .friends { right: calc(14px + var(--safe-r)); z-index: 8; } /* opened on demand, over the minimap */
+  body.compact .carol .title, body.compact .carol input[type=range] { display: none; } /* play / next only */
+}
+@media (max-width: 1000px) { body.compact .chat { width: 260px; } body.compact .actions button { width: 46px; } }
+/* very small phones (e.g. 320×568) */
+@media (max-height: 640px) and (orientation: portrait) {
+  body.mobile .minimap { width: 88px; height: 88px; }
+  body.mobile .minimap-label { top: calc(148px + var(--safe-t)); width: 88px; }
+  body.mobile .sidebtns { top: calc(176px + var(--safe-t)); gap: 5px; }
+  body.mobile .sidebtns .roundbtn, body.mobile .mtopbtns .roundbtn { width: 38px; height: 38px; }
+  body.mobile .mtopbtns { gap: 5px; }
+  body.mobile.portrait .actions { bottom: calc(166px + var(--safe-b)); }
+  body.mobile .actions svg { width: 18px; height: 18px; }
+  body.mobile.portrait .joystick:not(.active) { top: calc(100% - 110px - var(--safe-b)); }
+}
+/* tablets: same touch layout, scaled up, side columns (there is room) */
+body.tablet .profile .avatar { width: 48px; height: 48px; }
+body.tablet .profile .nick { font-size: 16px; }
+body.tablet .minimap { width: 150px; height: 150px; }
+body.tablet .minimap-label { top: calc(212px + var(--safe-t)); width: 150px; font-size: 12px; }
+body.tablet .sidebtns, body.tablet.landscape .sidebtns { flex-direction: column; top: calc(246px + var(--safe-t)); right: calc(10px + var(--safe-r)); gap: 10px; }
+body.tablet .mtopbtns, body.tablet.landscape .mtopbtns { flex-direction: column; top: calc(132px + var(--safe-t)); gap: 10px; }
+body.tablet .roundbtn, body.tablet.landscape .mtopbtns .roundbtn, body.tablet.landscape .sidebtns .roundbtn { width: 54px; height: 54px; }
+body.tablet .actions { padding: 6px; gap: 4px; }
+body.tablet .actions button { min-width: 60px; font-size: 11.5px; padding: 7px 8px 5px; }
+body.tablet .actions svg { width: 24px; height: 24px; }
+body.tablet.landscape .actions { left: 50%; max-width: calc(100vw - 420px); }
+body.tablet.portrait .actions { bottom: calc(250px + var(--safe-b)); }
+body.tablet .joystick { transform: scale(1.2); }
+body.tablet.landscape .joystick:not(.active) { top: calc(100% - 150px - var(--safe-b)); left: calc(110px + var(--safe-l)); }
+body.tablet.landscape .joystick .jlbl { display: block; }
+body.tablet .look-hint { right: calc(180px + var(--safe-r)); top: 45%; }
+body.worlds-collapsed .actions, body.worlds-collapsed .carol { bottom: calc(76px + var(--safe-b)); }

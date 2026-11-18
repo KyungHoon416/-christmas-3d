@@ -1,0 +1,418 @@
+[
+  {
+    "name": "iPhone SE 1",
+    "w": 320,
+    "h": 568,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Galaxy Fold cover",
+    "w": 344,
+    "h": 882,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPhone SE 3",
+    "w": 375,
+    "h": 667,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPhone 13 mini",
+    "w": 375,
+    "h": 812,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Pixel 7",
+    "w": 412,
+    "h": 915,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPhone 15 Pro Max",
+    "w": 430,
+    "h": 932,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Fold open",
+    "w": 673,
+    "h": 841,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPad mini",
+    "w": 768,
+    "h": 1024,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPad Pro 11",
+    "w": 834,
+    "h": 1194,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Tab S9",
+    "w": 800,
+    "h": 1280,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPad 12.9",
+    "w": 1024,
+    "h": 1366,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "SE 1 land",
+    "w": 568,
+    "h": 320,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "SE 3 land",
+    "w": 667,
+    "h": 375,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "13 mini land",
+    "w": 812,
+    "h": 375,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Pixel 7 land",
+    "w": 915,
+    "h": 412,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "15 Pro Max land",
+    "w": 932,
+    "h": 430,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Fold open land",
+    "w": 841,
+    "h": 673,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPad mini land",
+    "w": 1024,
+    "h": 768,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPad Pro land",
+    "w": 1194,
+    "h": 834,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Tab S9 land",
+    "w": 1280,
+    "h": 800,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "iPhone SE 1",
+    "w": 320,
+    "h": 568,
+    "stage": "hud",
+    "cls": "mobile portrait",
+    "issues": [],
+    "file": "iPhone_SE_1.jpg"
+  },
+  {
+    "name": "Galaxy Fold cover",
+    "w": 344,
+    "h": 882,
+    "stage": "hud",
+    "cls": "mobile portrait",
+    "issues": [],
+    "file": "Galaxy_Fold_cover.jpg"
+  },
+  {
+    "name": "iPhone SE 3",
+    "w": 375,
+    "h": 667,
+    "stage": "hud",
+    "cls": "mobile portrait",
+    "issues": [],
+    "file": "iPhone_SE_3.jpg"
+  },
+  {
+    "name": "iPhone 13 mini",
+    "w": 375,
+    "h": 812,
+    "stage": "hud",
+    "cls": "mobile portrait",
+    "issues": [],
+    "file": "iPhone_13_mini.jpg"
+  },
+  {
+    "name": "Pixel 7",
+    "w": 412,
+    "h": 915,
+    "stage": "hud",
+    "cls": "mobile portrait",
+    "issues": [],
+    "file": "Pixel_7.jpg"
+  },
+  {
+    "name": "iPhone 15 Pro Max",
+    "w": 430,
+    "h": 932,
+    "stage": "hud",
+    "cls": "mobile portrait",
+    "issues": [],
+    "file": "iPhone_15_Pro_Max.jpg"
+  },
+  {
+    "name": "Fold open",
+    "w": 673,
+    "h": 841,
+    "stage": "hud",
+    "cls": "mobile portrait tablet",
+    "issues": [],
+    "file": "Fold_open.jpg"
+  },
+  {
+    "name": "iPad mini",
+    "w": 768,
+    "h": 1024,
+    "stage": "hud",
+    "cls": "mobile portrait tablet",
+    "issues": [],
+    "file": "iPad_mini.jpg"
+  },
+  {
+    "name": "iPad Pro 11",
+    "w": 834,
+    "h": 1194,
+    "stage": "hud",
+    "cls": "mobile portrait tablet",
+    "issues": [],
+    "file": "iPad_Pro_11.jpg"
+  },
+  {
+    "name": "Tab S9",
+    "w": 800,
+    "h": 1280,
+    "stage": "hud",
+    "cls": "mobile portrait tablet",
+    "issues": [],
+    "file": "Tab_S9.jpg"
+  },
+  {
+    "name": "iPad 12.9",
+    "w": 1024,
+    "h": 1366,
+    "stage": "hud",
+    "cls": "mobile portrait tablet",
+    "issues": [],
+    "file": "iPad_12_9.jpg"
+  },
+  {
+    "name": "SE 1 land",
+    "w": 568,
+    "h": 320,
+    "stage": "hud",
+    "cls": "mobile landscape",
+    "issues": [],
+    "file": "SE_1_land.jpg"
+  },
+  {
+    "name": "SE 3 land",
+    "w": 667,
+    "h": 375,
+    "stage": "hud",
+    "cls": "mobile landscape",
+    "issues": [],
+    "file": "SE_3_land.jpg"
+  },
+  {
+    "name": "13 mini land",
+    "w": 812,
+    "h": 375,
+    "stage": "hud",
+    "cls": "mobile landscape",
+    "issues": [],
+    "file": "13_mini_land.jpg"
+  },
+  {
+    "name": "Pixel 7 land",
+    "w": 915,
+    "h": 412,
+    "stage": "hud",
+    "cls": "mobile landscape",
+    "issues": [],
+    "file": "Pixel_7_land.jpg"
+  },
+  {
+    "name": "15 Pro Max land",
+    "w": 932,
+    "h": 430,
+    "stage": "hud",
+    "cls": "mobile landscape",
+    "issues": [],
+    "file": "15_Pro_Max_land.jpg"
+  },
+  {
+    "name": "Fold open land",
+    "w": 841,
+    "h": 673,
+    "stage": "hud",
+    "cls": "mobile landscape tablet",
+    "issues": [],
+    "file": "Fold_open_land.jpg"
+  },
+  {
+    "name": "iPad mini land",
+    "w": 1024,
+    "h": 768,
+    "stage": "hud",
+    "cls": "mobile landscape tablet",
+    "issues": [],
+    "file": "iPad_mini_land.jpg"
+  },
+  {
+    "name": "iPad Pro land",
+    "w": 1194,
+    "h": 834,
+    "stage": "hud",
+    "cls": "mobile landscape tablet",
+    "issues": [],
+    "file": "iPad_Pro_land.jpg"
+  },
+  {
+    "name": "Tab S9 land",
+    "w": 1280,
+    "h": 800,
+    "stage": "hud",
+    "cls": "mobile landscape tablet",
+    "issues": [],
+    "file": "Tab_S9_land.jpg"
+  },
+  {
+    "name": "Desktop 1024x700",
+    "w": 1024,
+    "h": 700,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Laptop 1280x720",
+    "w": 1280,
+    "h": 720,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Laptop 1366x768",
+    "w": 1366,
+    "h": 768,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Desktop 1440x900",
+    "w": 1440,
+    "h": 900,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Desktop 1920x1080",
+    "w": 1920,
+    "h": 1080,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Small window 920x620",
+    "w": 920,
+    "h": 620,
+    "stage": "login",
+    "issues": []
+  },
+  {
+    "name": "Desktop 1024x700",
+    "w": 1024,
+    "h": 700,
+    "stage": "hud",
+    "cls": "landscape compact worlds-collapsed",
+    "issues": [],
+    "file": "Desktop_1024x700.jpg"
+  },
+  {
+    "name": "Laptop 1280x720",
+    "w": 1280,
+    "h": 720,
+    "stage": "hud",
+    "cls": "landscape compact worlds-collapsed",
+    "issues": [],
+    "file": "Laptop_1280x720.jpg"
+  },
+  {
+    "name": "Laptop 1366x768",
+    "w": 1366,
+    "h": 768,
+    "stage": "hud",
+    "cls": "landscape compact worlds-collapsed",
+    "issues": [],
+    "file": "Laptop_1366x768.jpg"
+  },
+  {
+    "name": "Desktop 1440x900",
+    "w": 1440,
+    "h": 900,
+    "stage": "hud",
+    "cls": "landscape worlds-collapsed",
+    "issues": [],
+    "file": "Desktop_1440x900.jpg"
+  },
+  {
+    "name": "Desktop 1920x1080",
+    "w": 1920,
+    "h": 1080,
+    "stage": "hud",
+    "cls": "landscape worlds-collapsed",
+    "issues": [],
+    "file": "Desktop_1920x1080.jpg"
+  },
+  {
+    "name": "Small window 920x620",
+    "w": 920,
+    "h": 620,
+    "stage": "hud",
+    "cls": "landscape worlds-collapsed compact",
+    "issues": [],
+    "file": "Small_window_920x620.jpg"
+  }
+]
