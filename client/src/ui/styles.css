@@ -499,3 +499,6 @@ body.tablet.landscape .joystick:not(.active) { top: calc(100% - 150px - var(--sa
 body.tablet.landscape .joystick .jlbl { display: block; }
 body.tablet .look-hint { right: calc(180px + var(--safe-r)); top: 45%; }
 body.worlds-collapsed .actions, body.worlds-collapsed .carol { bottom: calc(76px + var(--safe-b)); }
+/* the joystick ring and the look hint are visual only: touches must reach the game canvas
+   (#app > * re-enables pointer events for HUD panels, so override it explicitly) */
+#app > .joystick, #app > .joystick *, #app > .look-hint { pointer-events: none; }
